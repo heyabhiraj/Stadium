@@ -47,7 +47,10 @@ class TransportAgent(Agent):
                 confidence=0.85,
                 zone_id=best.id,
                 actions=[f"Promote {best.name} in fan app egress banner"],
-                metadata={"option": best.id, "occupancy_ratio": round(reading.ratio, 2)},
+                metadata={
+                    "option": best.id,
+                    "occupancy_ratio": round(reading.ratio, 2),
+                },
             )
         ]
 

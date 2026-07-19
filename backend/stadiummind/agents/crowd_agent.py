@@ -74,9 +74,7 @@ class CrowdAgent(Agent):
                 f"Should fans be redirected from {gate.name} to {alternative.name}?",
             )
 
-            severity = (
-                Severity.HIGH if reading.ratio >= 0.9 else Severity.MEDIUM
-            )
+            severity = Severity.HIGH if reading.ratio >= 0.9 else Severity.MEDIUM
             confidence = min(0.95, 0.6 + reading.ratio * 0.35)
             recs.append(
                 self._make_rec(

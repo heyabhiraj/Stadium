@@ -10,7 +10,14 @@ from __future__ import annotations
 import asyncio
 import logging
 
-from fastapi import Depends, FastAPI, Header, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import (
+    Depends,
+    FastAPI,
+    Header,
+    HTTPException,
+    WebSocket,
+    WebSocketDisconnect,
+)
 from fastapi.middleware.cors import CORSMiddleware
 
 from stadiummind.api.schemas import (
@@ -227,8 +234,7 @@ def create_app(service: StadiumService | None = None) -> FastAPI:
     @app.get("/api/incidents", response_model=list[IncidentOut])
     def list_incidents(include_resolved: bool = True) -> list[IncidentOut]:
         return [
-            IncidentOut.from_domain(i)
-            for i in service.list_incidents(include_resolved)
+            IncidentOut.from_domain(i) for i in service.list_incidents(include_resolved)
         ]
 
     @app.post("/api/incidents/{incident_id}/resolve", response_model=IncidentOut)

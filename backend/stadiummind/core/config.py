@@ -30,8 +30,8 @@ class Settings:
     force_mock_llm: bool = False
 
     # --- Infrastructure endpoints (optional) -----------------------------
-    database_url: str | None = None          # e.g. postgresql+psycopg://...
-    redis_url: str | None = None             # e.g. redis://localhost:6379/0
+    database_url: str | None = None  # e.g. postgresql+psycopg://...
+    redis_url: str | None = None  # e.g. redis://localhost:6379/0
     kafka_bootstrap_servers: str | None = None
 
     # --- External APIs (optional) ----------------------------------------
@@ -40,7 +40,7 @@ class Settings:
     google_maps_api_key: str | None = None
     # football-data.org: free-tier token + which match to show.
     football_data_api_key: str | None = None
-    football_data_competition: str = "WC"    # FIFA World Cup competition code
+    football_data_competition: str = "WC"  # FIFA World Cup competition code
     football_data_match_id: str | None = None  # pin a specific match if desired
     external_timeout_seconds: float = 8.0
 

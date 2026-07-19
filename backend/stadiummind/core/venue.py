@@ -38,7 +38,9 @@ class GeoAnchor:
 
 # Default anchor: MetLife Stadium, East Rutherford NJ - the FIFA World Cup 2026
 # final venue. Coordinates are the stadium centroid.
-METLIFE = GeoAnchor(name="MetLife Stadium", lat=40.81357, lng=-74.07429, footprint_m=320.0)
+METLIFE = GeoAnchor(
+    name="MetLife Stadium", lat=40.81357, lng=-74.07429, footprint_m=320.0
+)
 
 
 @dataclass
@@ -142,27 +144,39 @@ def build_default_venue() -> Venue:
     v.add(Zone("metro", "Metro Station", ZoneType.TRANSIT, 0.95, 0.50, 8000, 12))
 
     # -- edges: gates -> nearest concourse --------------------------------
-    v.connect("gate_1", "conc_n"); v.connect("gate_1", "conc_w")
-    v.connect("gate_3", "conc_n"); v.connect("gate_3", "conc_e")
-    v.connect("gate_5", "conc_s"); v.connect("gate_5", "conc_w")
-    v.connect("gate_7", "conc_s"); v.connect("gate_7", "conc_e")
+    v.connect("gate_1", "conc_n")
+    v.connect("gate_1", "conc_w")
+    v.connect("gate_3", "conc_n")
+    v.connect("gate_3", "conc_e")
+    v.connect("gate_5", "conc_s")
+    v.connect("gate_5", "conc_w")
+    v.connect("gate_7", "conc_s")
+    v.connect("gate_7", "conc_e")
 
     # Concourse ring.
-    v.connect("conc_n", "conc_e"); v.connect("conc_e", "conc_s")
-    v.connect("conc_s", "conc_w"); v.connect("conc_w", "conc_n")
+    v.connect("conc_n", "conc_e")
+    v.connect("conc_e", "conc_s")
+    v.connect("conc_s", "conc_w")
+    v.connect("conc_w", "conc_n")
 
     # Concourse -> stands.
-    v.connect("conc_n", "stand_n"); v.connect("conc_s", "stand_s")
-    v.connect("conc_e", "stand_e"); v.connect("conc_w", "stand_w")
+    v.connect("conc_n", "stand_n")
+    v.connect("conc_s", "stand_s")
+    v.connect("conc_e", "stand_e")
+    v.connect("conc_w", "stand_w")
 
     # Amenities hang off the nearest concourse.
-    v.connect("conc_n", "food_a"); v.connect("conc_n", "wc_n")
-    v.connect("conc_s", "food_b"); v.connect("conc_s", "wc_s")
+    v.connect("conc_n", "food_a")
+    v.connect("conc_n", "wc_n")
+    v.connect("conc_s", "food_b")
+    v.connect("conc_s", "wc_s")
     v.connect("conc_w", "med_1")
 
     # Transport.
-    v.connect("gate_1", "parking"); v.connect("gate_5", "parking")
-    v.connect("gate_3", "metro"); v.connect("gate_7", "metro")
+    v.connect("gate_1", "parking")
+    v.connect("gate_5", "parking")
+    v.connect("gate_3", "metro")
+    v.connect("gate_7", "metro")
 
     # Real-world landmark overrides (set before apply_geo so they are kept):
     #   Meadowlands Rail Station sits north-west of the stadium; the main

@@ -32,7 +32,7 @@ class DirectionsResult:
 
     distance_m: float
     duration_min: float
-    polyline: list[tuple[float, float]]      # ordered (lat, lng) points
+    polyline: list[tuple[float, float]]  # ordered (lat, lng) points
     provider: str
     steps: list[str] = field(default_factory=list)
 
@@ -43,7 +43,10 @@ def haversine_m(a: tuple[float, float], b: tuple[float, float]) -> float:
     lat1, lng1 = map(math.radians, a)
     lat2, lng2 = map(math.radians, b)
     dlat, dlng = lat2 - lat1, lng2 - lng1
-    h = math.sin(dlat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlng / 2) ** 2
+    h = (
+        math.sin(dlat / 2) ** 2
+        + math.cos(lat1) * math.cos(lat2) * math.sin(dlng / 2) ** 2
+    )
     return 2 * r * math.asin(math.sqrt(h))
 
 
@@ -110,7 +113,9 @@ class GoogleDirectionsProvider(DirectionsProvider):
 
         leg = data["routes"][0]["legs"][0]
         polyline = decode_polyline(data["routes"][0]["overview_polyline"]["points"])
-        steps = [_strip_html(s.get("html_instructions", "")) for s in leg.get("steps", [])]
+        steps = [
+            _strip_html(s.get("html_instructions", "")) for s in leg.get("steps", [])
+        ]
         return DirectionsResult(
             distance_m=float(leg["distance"]["value"]),
             duration_min=round(leg["duration"]["value"] / 60.0, 1),

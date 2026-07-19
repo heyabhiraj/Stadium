@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Navigation, Utensils, TrainFront, Accessibility, AlertTriangle, MapPin, User, Ticket } from "lucide-react";
-import { GoogleStadiumMap } from "@/components/GoogleStadiumMap";
-import { RecommendationCard } from "@/components/RecommendationCard";
+import { GoogleStadiumMap } from "@/features/map/GoogleStadiumMap";
+import { RecommendationCard } from "@/features/ai/RecommendationCard";
 import { api, type Match, type Recommendation, type VenueAnchor, type ZoneHeat } from "@/lib/api";
 import { I18N, LOCALES, flagColors, type Locale } from "@/lib/i18n";
 
@@ -108,26 +108,30 @@ export default function FanHome() {
           
           <div className="space-y-4 mb-8">
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1 flex items-center gap-2">
-                <User size={16} /> Your Name
+              <label htmlFor="userNameInput" className="block text-sm font-semibold text-slate-700 mb-1 flex items-center gap-2">
+                <User size={16} aria-hidden="true" /> Your Name
               </label>
               <input
+                id="userNameInput"
                 type="text"
                 value={userName}
                 onChange={(e) => setUserName(e.target.value)}
                 placeholder="e.g. John Doe"
+                aria-label="Your Name"
                 className="w-full border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1 flex items-center gap-2">
-                <Ticket size={16} /> Seat Location
+              <label htmlFor="seatInput" className="block text-sm font-semibold text-slate-700 mb-1 flex items-center gap-2">
+                <Ticket size={16} aria-hidden="true" /> Seat Location
               </label>
               <input
+                id="seatInput"
                 type="text"
                 value={seat}
                 onChange={(e) => setSeat(e.target.value)}
                 placeholder="e.g. Block 101, Row A, Seat 1"
+                aria-label="Seat Location"
                 className="w-full border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
               />
             </div>

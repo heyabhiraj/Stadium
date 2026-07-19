@@ -30,9 +30,9 @@ class ZoneType(str, enum.Enum):
 class CongestionLevel(str, enum.Enum):
     """Human-friendly congestion buckets used by the heatmap UI."""
 
-    NORMAL = "normal"        # green
-    MODERATE = "moderate"    # yellow
-    BUSY = "busy"            # orange
+    NORMAL = "normal"  # green
+    MODERATE = "moderate"  # yellow
+    BUSY = "busy"  # orange
     CONGESTED = "congested"  # red
 
     @classmethod
@@ -127,7 +127,7 @@ class Route:
 
     origin: str
     destination: str
-    path: list[str]                 # ordered list of zone ids
+    path: list[str]  # ordered list of zone ids
     distance_m: float
     eta_minutes: float
     avoids_congestion: bool
@@ -173,16 +173,16 @@ class Recommendation:
     """
 
     id: str
-    agent: str                       # which agent produced it
-    title: str                       # short action, e.g. "Open Gate 5"
-    explanation: str                 # why - shown to the operator/fan
-    confidence: float                # 0-1
+    agent: str  # which agent produced it
+    title: str  # short action, e.g. "Open Gate 5"
+    explanation: str  # why - shown to the operator/fan
+    confidence: float  # 0-1
     zone_id: str | None = None
     severity: Severity = Severity.LOW
     actions: list[str] = field(default_factory=list)
     metadata: dict = field(default_factory=dict)
     created_at: float = field(default_factory=time.time)
-    approved: bool | None = None     # None = pending, True/False = decided
+    approved: bool | None = None  # None = pending, True/False = decided
 
     @classmethod
     def create(
@@ -201,9 +201,7 @@ class Recommendation:
         # the existing record instead of creating an unbounded stream of
         # duplicates, and lets an operator's approve/reject decision persist
         # across polling cycles.
-        rec_id = id or stable_recommendation_id(
-            agent, title, kwargs.get("zone_id")
-        )
+        rec_id = id or stable_recommendation_id(agent, title, kwargs.get("zone_id"))
         return cls(
             id=rec_id,
             agent=agent,
@@ -236,8 +234,8 @@ class Match:
     away_team: str
     competition: str
     venue: str
-    kickoff_utc: str | None          # ISO-8601 timestamp
-    status: str                      # SCHEDULED | LIVE | IN_PLAY | FINISHED ...
+    kickoff_utc: str | None  # ISO-8601 timestamp
+    status: str  # SCHEDULED | LIVE | IN_PLAY | FINISHED ...
     home_score: int | None = None
     away_score: int | None = None
     minute: int | None = None

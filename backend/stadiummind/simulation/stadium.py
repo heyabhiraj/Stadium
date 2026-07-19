@@ -33,7 +33,7 @@ from stadiummind.core.venue import Venue, build_default_venue
 _TARGET_RATIO: dict[ZoneType, float] = {
     ZoneType.GATE: 0.30,
     ZoneType.CONCOURSE: 0.35,
-    ZoneType.SEATING: 0.20,     # grows toward kickoff (see _target_ratio)
+    ZoneType.SEATING: 0.20,  # grows toward kickoff (see _target_ratio)
     ZoneType.FOOD: 0.45,
     ZoneType.WASHROOM: 0.40,
     ZoneType.MEDICAL: 0.08,

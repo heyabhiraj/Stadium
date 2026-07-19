@@ -3,7 +3,7 @@
 /** Full-screen live stadium map (Google satellite + congestion overlay). */
 
 import { useEffect, useState } from "react";
-import { GoogleStadiumMap } from "@/components/GoogleStadiumMap";
+import { GoogleStadiumMap } from "@/features/map/GoogleStadiumMap";
 import { api, type VenueAnchor, type ZoneHeat } from "@/lib/api";
 
 export default function FanMap() {

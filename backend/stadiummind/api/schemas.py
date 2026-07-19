@@ -67,7 +67,7 @@ class DirectionsOut(BaseModel):
     distance_m: float
     duration_min: float
     provider: str
-    polyline: list[list[float]]      # [[lat, lng], ...]
+    polyline: list[list[float]]  # [[lat, lng], ...]
     steps: list[str]
 
 

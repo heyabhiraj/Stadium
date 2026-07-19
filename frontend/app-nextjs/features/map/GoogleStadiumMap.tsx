@@ -13,7 +13,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { StadiumMap } from "@/components/StadiumMap";
+import { StadiumMap } from "@/features/map/StadiumMap";
 import { api, LEVEL_COLOR, type VenueAnchor, type ZoneHeat } from "@/lib/api";
 
 // Zone types that make sense as a walking-route destination.

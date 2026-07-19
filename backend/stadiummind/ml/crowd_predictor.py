@@ -43,9 +43,9 @@ def _generate_training_data(seed: int = 7) -> tuple[np.ndarray, np.ndarray]:
 
     future = (
         current
-        + 0.6 * arrivals * (1.0 - current)   # arrivals fill remaining space
-        + 0.8 * trend                        # momentum
-        + 0.1 * arrivals * minute            # busier near kickoff
+        + 0.6 * arrivals * (1.0 - current)  # arrivals fill remaining space
+        + 0.8 * trend  # momentum
+        + 0.1 * arrivals * minute  # busier near kickoff
     )
     future = np.clip(future + rng.normal(0, 0.03, _TRAIN_ROWS), 0.0, 1.2)
 
@@ -114,12 +114,14 @@ class CrowdPredictor:
     ) -> float:
         """Predict the occupancy ratio a few minutes ahead (clamped 0-1.2)."""
         features = np.array(
-            [[
-                _clip01(current_ratio),
-                _clip01(arrival_rate_per_min / 50.0),  # normalise ~[0,1]
-                _clip01(match_minute / 120.0),
-                float(np.clip(trend, -1.0, 1.0)),
-            ]],
+            [
+                [
+                    _clip01(current_ratio),
+                    _clip01(arrival_rate_per_min / 50.0),  # normalise ~[0,1]
+                    _clip01(match_minute / 120.0),
+                    float(np.clip(trend, -1.0, 1.0)),
+                ]
+            ],
             dtype=float,
         )
         prediction = float(self._model.predict(features)[0])
@@ -141,7 +143,9 @@ class CrowdPredictor:
         ratio = current_ratio
         for minute_ahead in range(1, horizon + 1):
             next_ratio = self.predict_ratio(
-                ratio, arrival_rate_per_min, match_minute + minute_ahead,
+                ratio,
+                arrival_rate_per_min,
+                match_minute + minute_ahead,
                 trend=next_ratio_trend(ratio),
             )
             if next_ratio >= threshold:

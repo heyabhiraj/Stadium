@@ -28,7 +28,10 @@ from stadiummind.infra import (
     build_message_bus,
     build_repository,
 )
-from stadiummind.integrations.directions import DirectionsResult, build_directions_provider
+from stadiummind.integrations.directions import (
+    DirectionsResult,
+    build_directions_provider,
+)
 from stadiummind.integrations.matches import build_match_provider
 from stadiummind.simulation.stadium import StadiumSimulator
 
@@ -193,9 +196,7 @@ class StadiumService:
             raise KeyError(f"unknown zone {zone_id!r}")
         incident = Incident.create(type, severity, zone_id, description)
         self.repository.save_incident(incident)
-        self.bus.publish(
-            TOPIC_INCIDENTS, {"id": incident.id, "zone": zone_id}
-        )
+        self.bus.publish(TOPIC_INCIDENTS, {"id": incident.id, "zone": zone_id})
         return incident
 
     def list_incidents(self, include_resolved: bool = True) -> list[Incident]:

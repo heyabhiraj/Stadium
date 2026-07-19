@@ -23,16 +23,13 @@ class KeyValueStore(ABC):
     """Abstract JSON key/value store with optional per-key TTL."""
 
     @abstractmethod
-    def set(self, key: str, value: Any, ttl_seconds: float | None = None) -> None:
-        ...
+    def set(self, key: str, value: Any, ttl_seconds: float | None = None) -> None: ...
 
     @abstractmethod
-    def get(self, key: str) -> Any | None:
-        ...
+    def get(self, key: str) -> Any | None: ...
 
     @abstractmethod
-    def delete(self, key: str) -> None:
-        ...
+    def delete(self, key: str) -> None: ...
 
 
 class InMemoryStore(KeyValueStore):

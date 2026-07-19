@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
-import { FloatingAIChat } from "@/components/FloatingAIChat";
+import { FloatingAIChat } from "@/features/ai/FloatingAIChat";
 
 export const metadata: Metadata = {
   title: "StadiumMind AI",

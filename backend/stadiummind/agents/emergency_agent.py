@@ -43,9 +43,7 @@ class EmergencyAgent(Agent):
         recs: list[Recommendation] = []
 
         # 1) Allocate volunteers across active incidents by severity weight.
-        demands = {
-            inc.zone_id: _SEVERITY_WEIGHT[inc.severity] for inc in active
-        }
+        demands = {inc.zone_id: _SEVERITY_WEIGHT[inc.severity] for inc in active}
         allocation = allocate_volunteers(
             demands, available=self.available_volunteers, max_per_zone=6
         )
@@ -71,8 +69,11 @@ class EmergencyAgent(Agent):
                     severity=inc.severity,
                     actions=[
                         f"Dispatch {assigned} volunteer(s) to {zone.name}",
-                        "Notify medical team" if inc.type is IncidentType.MEDICAL
-                        else "Notify security team",
+                        (
+                            "Notify medical team"
+                            if inc.type is IncidentType.MEDICAL
+                            else "Notify security team"
+                        ),
                     ],
                     metadata={
                         "incident_id": inc.id,
