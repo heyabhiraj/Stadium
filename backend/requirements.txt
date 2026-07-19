@@ -1,0 +1,32 @@
+# ---------------------------------------------------------------------------
+# StadiumMind AI - Backend runtime dependencies
+# ---------------------------------------------------------------------------
+# Core (always required)
+fastapi>=0.110
+uvicorn[standard]>=0.29
+pydantic>=2.6
+pydantic-settings>=2.2
+numpy>=1.26
+scipy>=1.11
+python-multipart>=0.0.9
+
+# Testing
+pytest>=8.0
+httpx>=0.27          # required by FastAPI TestClient
+
+# ---------------------------------------------------------------------------
+# Optional integrations. The codebase degrades gracefully when these are not
+# installed (see stadiummind.infra.* and stadiummind.llm.adapter). Install the
+# ones you need for a production deployment.
+# ---------------------------------------------------------------------------
+# Real LLM
+google-generativeai>=0.5    # Gemini
+# Persistence & streaming
+SQLAlchemy>=2.0             # PostgreSQL / SQLite repositories
+redis>=5.0                 # Redis key/value cache
+kafka-python>=2.0          # Kafka message bus
+# Machine learning
+xgboost>=2.0               # Crowd prediction (primary)
+lightgbm>=4.0              # Crowd prediction (alternative)
+# Optimization
+pulp>=2.8                  # Linear-programming volunteer allocation

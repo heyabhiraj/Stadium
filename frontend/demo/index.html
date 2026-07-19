@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<!--
+  StadiumMind AI - Standalone interactive demo.
+
+  A single, dependency-free HTML file that runs the full product narrative in
+  the browser with NO backend. It embeds a small mirror of the backend's
+  simulation + agent logic so judges can click through the 7-step story
+  offline. All iconography is inline SVG (no emoji), per the design system:
+  Inter type, 8px grid, 12px radius, navy/blue with green/amber/red states.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>StadiumMind AI - Demo</title>
+<style>
+  :root {
+    --navy: #0b1f3a;      --navy-2: #12294c;
+    --blue: #2563eb;      --blue-soft: #dbeafe;
+    --green: #16a34a;     --amber: #f59e0b;
+    --orange: #ea580c;    --red: #dc2626;
+    --bg: #f4f6fb;        --surface: #ffffff;
+    --text: #0f172a;      --muted: #64748b;
+    --line: #e2e8f0;      --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  }
+  .app { max-width: 1180px; margin: 0 auto; padding: 16px; }
+  header.top {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; margin-bottom: 16px;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 20px; }
+  .brand .logo { color: var(--blue); }
+  .seg { display: flex; background: var(--surface); border: 1px solid var(--line);
+         border-radius: 999px; padding: 4px; gap: 4px; }
+  .seg button { border: 0; background: transparent; padding: 8px 16px; border-radius: 999px;
+                font-weight: 600; color: var(--muted); cursor: pointer; font-size: 14px; }
+  .seg button.active { background: var(--navy); color: #fff; }
+  .grid { display: grid; grid-template-columns: 380px 1fr; gap: 16px; align-items: start; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--surface); border: 1px solid var(--line);
+          border-radius: var(--radius); padding: 16px; }
+  .card h3 { margin: 0 0 4px; font-size: 13px; text-transform: uppercase;
+             letter-spacing: .06em; color: var(--muted); }
+
+  /* Phone frame (Fan app) */
+  .phone { background: var(--navy); border-radius: 28px; padding: 12px; }
+  .screen { background: var(--surface); border-radius: 18px; overflow: hidden;
+            min-height: 620px; display: flex; flex-direction: column; }
+  .screen-body { padding: 16px; flex: 1; overflow-y: auto; }
+  .hero { background: linear-gradient(135deg, var(--navy), var(--blue)); color: #fff;
+          padding: 18px; border-radius: 14px; }
+  .hero .greet { opacity: .85; font-size: 13px; display:flex; align-items:center; gap:6px;}
+  .hero .match { font-size: 22px; font-weight: 800; margin-top: 6px; }
+  .hero .kick { opacity: .85; font-size: 13px; margin-top: 2px; }
+  .actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
+  .action { border: 1px solid var(--line); border-radius: 12px; padding: 12px 8px;
+            text-align: center; cursor: pointer; background: var(--surface); }
+  .action:hover { border-color: var(--blue); }
+  .action .ic { color: var(--blue); }
+  .action span { display: block; font-size: 12px; margin-top: 6px; font-weight: 600; }
+  .tabbar { display: flex; border-top: 1px solid var(--line); }
+  .tabbar button { flex: 1; border: 0; background: transparent; padding: 10px 0 12px;
+                   color: var(--muted); font-size: 11px; font-weight: 600; cursor: pointer;
+                   display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .tabbar button.active { color: var(--blue); }
+
+  .alert { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px;
+           border-radius: 10px; border: 1px solid var(--line); margin-top: 8px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 4px; flex: none; }
+  .lvl-normal { background: var(--green); } .lvl-moderate { background: var(--amber); }
+  .lvl-busy { background: var(--orange); } .lvl-congested { background: var(--red); }
+
+  .rec { border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+  .rec .agent { font-size: 11px; text-transform: uppercase; letter-spacing: .05em;
+                color: var(--blue); font-weight: 700; }
+  .rec .title { font-weight: 700; margin: 4px 0; }
+  .rec .exp { color: var(--muted); font-size: 14px; }
+  .rec .conf { font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .bar { height: 6px; background: var(--line); border-radius: 999px; overflow: hidden; margin-top: 4px; }
+  .bar > i { display: block; height: 100%; background: var(--blue); }
+  .rec .btns { display: flex; gap: 8px; margin-top: 12px; }
+  .btn { border: 0; border-radius: 10px; padding: 8px 14px; font-weight: 600; cursor: pointer; font-size: 14px;}
+  .btn.approve { background: var(--green); color: #fff; }
+  .btn.reject { background: #fff; color: var(--red); border: 1px solid var(--red); }
+  .btn.ghost { background: var(--blue-soft); color: var(--blue); }
+  .badge { display:inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+  .sev-critical { background: #fee2e2; color: var(--red); }
+  .sev-high { background: #ffedd5; color: var(--orange); }
+  .sev-medium { background: #fef9c3; color: #a16207; }
+  .sev-low { background: #dcfce7; color: var(--green); }
+
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .kpi { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .kpi .k { background: var(--navy); color: #fff; border-radius: 12px; padding: 12px; }
+  .kpi .k .n { font-size: 22px; font-weight: 800; }
+  .kpi .k .l { font-size: 11px; opacity: .8; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 10px; }
+  .legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+  .zone-label { font-size: 9px; fill: #fff; font-weight: 600; pointer-events: none; }
+  .step-log { font-size: 13px; color: var(--muted); max-height: 160px; overflow-y: auto; }
+  .step-log div { padding: 4px 0; border-bottom: 1px dashed var(--line); }
+  .step-log b { color: var(--text); }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <!-- inline SVG logo (no emoji) -->
+      <svg class="logo" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <ellipse cx="12" cy="12" rx="9" ry="6"/><path d="M3 12c0 3.3 4 6 9 6s9-2.7 9-6"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+      </svg>
+      StadiumMind <span style="color:var(--blue)">AI</span>
+    </div>
+    <div class="seg" id="viewSwitch">
+      <button data-view="fan" class="active">Fan App</button>
+      <button data-view="ops">Operations Center</button>
+    </div>
+  </header>
+
+  <!-- ============================= FAN VIEW ============================= -->
+  <div id="view-fan" class="grid">
+    <div class="phone">
+      <div class="screen">
+        <div class="screen-body" id="fanBody"><!-- rendered by JS --></div>
+        <nav class="tabbar" id="tabbar">
+          <button data-tab="home" class="active">__ICON_home__<span>Home</span></button>
+          <button data-tab="map">__ICON_map__<span>Map</span></button>
+          <button data-tab="ai">__ICON_ai__<span>AI</span></button>
+          <button data-tab="alerts">__ICON_bell__<span>Alerts</span></button>
+          <button data-tab="profile">__ICON_user__<span>Profile</span></button>
+        </nav>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <h3>Live Stadium Map &amp; Heatmap</h3>
+          <button class="btn ghost" id="gmapsBtn" style="padding:6px 12px">Satellite (Google)</button>
+        </div>
+        <div id="mapWrap"></div>
+        <div class="legend">
+          <span><i class="lvl-normal"></i>Normal</span>
+          <span><i class="lvl-moderate"></i>Moderate</span>
+          <span><i class="lvl-busy"></i>Busy</span>
+          <span><i class="lvl-congested"></i>Congested</span>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <h3>Guided Demo &mdash; the 7-step story</h3>
+        <div class="controls">
+          <button class="btn approve" id="playDemo">Play full demo</button>
+          <button class="btn ghost" id="stepDemo">Next step</button>
+          <button class="btn reject" id="resetDemo">Reset</button>
+        </div>
+        <div class="step-log" id="stepLog" style="margin-top:12px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================= OPS VIEW ============================= -->
+  <div id="view-ops" style="display:none">
+    <div class="kpi" style="margin-bottom:16px">
+      <div class="k"><div class="n" id="kpiMinute">0'</div><div class="l">Match minute</div></div>
+      <div class="k"><div class="n" id="kpiAtt">0</div><div class="l">Attendance</div></div>
+      <div class="k"><div class="n" id="kpiHot">0</div><div class="l">Congested zones</div></div>
+      <div class="k"><div class="n" id="kpiInc">0</div><div class="l">Open incidents</div></div>
+    </div>
+    <div class="grid">
+      <div>
+        <div class="card">
+          <h3>AI Copilot &mdash; recommendations</h3>
+          <div id="opsRecs"></div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <h3>Incident timeline</h3>
+          <div id="opsIncidents" class="step-log"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Stadium heatmap</h3>
+        <div id="opsMapWrap"></div>
+        <div class="legend">
+          <span><i class="lvl-normal"></i>Normal</span>
+          <span><i class="lvl-moderate"></i>Moderate</span>
+          <span><i class="lvl-busy"></i>Busy</span>
+          <span><i class="lvl-congested"></i>Congested</span>
+        </div>
+        <div class="controls">
+          <button class="btn approve" id="playDemo2">Play full demo</button>
+          <button class="btn ghost" id="stepDemo2">Next step</button>
+          <button class="btn reject" id="resetDemo2">Reset</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ==========================================================================
+   Icon library (inline SVG so we never rely on emoji or icon fonts).
+   ========================================================================== */
+const IC = {
+  home: svg('M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10'),
+  map: svg('M9 3L3 6v15l6-3 6 3 6-3V3l-6 3-6-3z M9 3v15 M15 6v15'),
+  ai: svg('M12 3a4 4 0 014 4v1a4 4 0 010 8v1a4 4 0 01-8 0v-1a4 4 0 010-8V7a4 4 0 014-4z'),
+  bell: svg('M6 8a6 6 0 1112 0c0 7 3 9 3 9H3s3-2 3-9 M10 21a2 2 0 004 0'),
+  user: svg('M4 21v-2a5 5 0 015-5h6a5 5 0 015 5v2 M12 3a4 4 0 100 8 4 4 0 000-8z'),
+  navigate: svg('M3 11l19-9-9 19-2-8-8-2z'),
+  food: svg('M4 3v7a3 3 0 006 0V3 M7 3v18 M17 3c-2 0-3 2-3 5s1 5 3 5v8'),
+  transport: svg('M4 16V6a2 2 0 012-2h12a2 2 0 012 2v10 M4 16h16 M4 16l-1 4 M20 16l1 4 M8 20v0 M16 20v0 M4 10h16'),
+  washroom: svg('M7 4a2 2 0 104 0 2 2 0 00-4 0z M6 21v-6H4l2-6h4l2 6h-2v6z M17 3v18 M14 8h6'),
+  access: svg('M12 4a2 2 0 100 4 2 2 0 000-4z M8 8l4 1 3 3 M12 9v4l3 5 M8 14a4 4 0 105 5'),
+  emergency: svg('M12 2l9 16H3L12 2z M12 9v4 M12 17v0'),
+  sun: svg('M12 4V2 M12 22v-2 M4 12H2 M22 12h-2 M6 6L4.5 4.5 M18 18l1.5 1.5 M6 18l-1.5 1.5 M18 6l1.5-1.5 M12 8a4 4 0 100 8 4 4 0 000-8z'),
+};
+function svg(path, size=22){
+  return `<svg class="ic" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="${path}"/></svg>`;
+}
+/* Inject tab icons into the markup placeholders. */
+document.body.innerHTML = document.body.innerHTML
+  .replace('__ICON_home__', IC.home).replace('__ICON_map__', IC.map)
+  .replace('__ICON_ai__', IC.ai).replace('__ICON_bell__', IC.bell)
+  .replace('__ICON_user__', IC.user);
+
+/* ==========================================================================
+   Venue graph - mirrors backend/stadiummind/core/venue.py
+   ========================================================================== */
+const ZONES = [
+  z('gate_1','Gate 1','gate',0.10,0.15,4000,8), z('gate_3','Gate 3','gate',0.90,0.15,4000,8),
+  z('gate_5','Gate 5','gate',0.10,0.85,4000,8), z('gate_7','Gate 7','gate',0.90,0.85,4000,8),
+  z('conc_n','N. Concourse','concourse',0.50,0.20,6000), z('conc_s','S. Concourse','concourse',0.50,0.80,6000),
+  z('conc_e','E. Concourse','concourse',0.80,0.50,6000), z('conc_w','W. Concourse','concourse',0.20,0.50,6000),
+  z('stand_n','North Stand','seating',0.50,0.33,15000), z('stand_s','South Stand','seating',0.50,0.67,15000),
+  z('stand_e','East Stand','seating',0.67,0.50,15000), z('stand_w','West Stand','seating',0.33,0.50,15000),
+  z('food_a','Food Court A','food',0.35,0.26,400,6), z('food_b','Food Court B','food',0.65,0.74,400,6),
+  z('wc_n','WC North','washroom',0.43,0.22,120,10), z('wc_s','WC South','washroom',0.57,0.78,120,10),
+  z('med_1','Medical 1','medical',0.25,0.55,40,2),
+  z('parking','Parking P1','parking',0.05,0.50,3000), z('metro','Metro','transit',0.95,0.50,8000,12),
+];
+function z(id,name,type,x,y,capacity,sp=0){ return {id,name,type,x,y,capacity,service_points:sp}; }
+const TARGET = { gate:0.30, concourse:0.35, seating:0.20, food:0.45, washroom:0.40,
+                 medical:0.08, parking:0.55, transit:0.40, exit:0.10 };
+
+/* Anchor the normalised grid to the real MetLife Stadium (WC 2026 final venue)
+   and project every zone to lat/lng - the same maths as the backend Venue. */
+const ANCHOR = { name:'MetLife Stadium', lat:40.81357, lng:-74.07429, footprint:320 };
+function project(x,y){
+  const east=(x-0.5)*ANCHOR.footprint, north=(0.5-y)*ANCHOR.footprint;
+  const lat=ANCHOR.lat + north/111320;
+  const lng=ANCHOR.lng + east/(111320*Math.cos(ANCHOR.lat*Math.PI/180));
+  return {lat:+lat.toFixed(6), lng:+lng.toFixed(6)};
+}
+ZONES.forEach(zn=>{ const p=project(zn.x,zn.y); zn.lat=p.lat; zn.lng=p.lng; });
+/* Real landmark overrides (Meadowlands Rail Station NW, main lots SW). */
+Object.assign(ZONES.find(z=>z.id==='metro'), {lat:40.814890, lng:-74.077260});
+Object.assign(ZONES.find(z=>z.id==='parking'), {lat:40.811000, lng:-74.079000});
+/* A Google Maps key may be supplied via ?gmaps=KEY (or window.STADIUMMIND_GMAPS_KEY). */
+function googleKey(){
+  const q=new URLSearchParams(location.search).get('gmaps');
+  return q || window.STADIUMMIND_GMAPS_KEY || '';
+}
+
+/* ==========================================================================
+   Tiny simulation + agent mirror (see backend for the authoritative version).
+   ========================================================================== */
+class Sim {
+  constructor(){ this.minute=0; this.occ={}; this.surge={}; ZONES.forEach(z=>this.occ[z.id]=0); this.warmup(5); }
+  target(zt){ return zt==='seating' ? Math.min(0.9,0.2+0.015*this.minute) : (TARGET[zt]||0.2); }
+  tick(){
+    this.minute++;
+    ZONES.forEach(zn=>{
+      const tgt=this.target(zn.type)*zn.capacity, cur=this.occ[zn.id];
+      const drift=(tgt-cur)*0.35, noise=(Math.random()-0.5)*zn.capacity*0.02;
+      const s=this.surge[zn.id]||0;
+      this.occ[zn.id]=Math.max(0,Math.min(Math.round(cur+drift+noise+s), Math.round(zn.capacity*1.2)));
+    });
+    const nx={}; for(const k in this.surge){ const r=Math.floor(this.surge[k]*0.6); if(r>0) nx[k]=r; } this.surge=nx;
+  }
+  warmup(n){ for(let i=0;i<n;i++) this.tick(); }
+  injectSurge(id,p){ this.surge[id]=(this.surge[id]||0)+p; }
+  ratio(id){ const zn=ZONES.find(z=>z.id===id); return this.occ[id]/zn.capacity; }
+  level(id){ const r=this.ratio(id); return r>=0.9?'congested':r>=0.75?'busy':r>=0.5?'moderate':'normal'; }
+  attendance(){ return ZONES.filter(z=>z.type==='seating').reduce((a,z)=>a+this.occ[z.id],0); }
+}
+/* Erlang-C wait estimate, mirrors optimization/queueing.py */
+function expectedWait(lambda, mu, c){
+  const a=lambda/mu, rho=a/c; if(rho>=1) return 999;
+  let sum=0, fact=1; for(let n=0;n<c;n++){ if(n>0) fact*=n; sum+=Math.pow(a,n)/fact; }
+  const cfact=fact*c; const last=(Math.pow(a,c)/cfact)*(1/(1-rho));
+  const pw=last/(sum+last); return pw/(c*mu-lambda);
+}
+/* Crowd + emergency + transport agents (condensed). Returns recommendations. */
+function analyze(sim, incidents){
+  const recs=[];
+  ZONES.filter(z=>z.type==='gate').forEach(g=>{
+    const r=sim.ratio(g.id); const inflow=(sim.surge[g.id]||0)+Math.max(0,(sim.target('gate')*g.capacity-sim.occ[g.id])*0.35);
+    const wait=expectedWait(inflow,8,g.service_points);
+    if(r>=0.8 || wait>=15){
+      const alt=ZONES.filter(z=>z.type==='gate'&&z.id!==g.id).sort((a,b)=>sim.ratio(a.id)-sim.ratio(b.id))[0];
+      recs.push({agent:'crowd',severity:r>=0.9?'high':'medium',
+        title:`Redirect fans from ${g.name} to ${alt.name}`,
+        exp:`${g.name} is ${pct(r)} full with a heavy queue. ${alt.name} is only ${pct(sim.ratio(alt.id))} full — divert arrivals to cut wait times.`,
+        conf:Math.min(0.95,0.6+r*0.35), zone:g.id});
+    }
+  });
+  incidents.filter(i=>!i.resolved).forEach(i=>{
+    const zn=ZONES.find(z=>z.id===i.zone);
+    recs.push({agent:'emergency',severity:i.severity,
+      title:`Dispatch volunteers to ${zn.name}`,
+      exp:`${i.severity.toUpperCase()} ${i.type} incident at ${zn.name}: ${i.desc}. Allocating responders and clearing the corridor.`,
+      conf:0.9, zone:i.zone});
+    recs.push({agent:'emergency',severity:i.severity,
+      title:`Reroute fans away from ${zn.name}`,
+      exp:`Keep the response path to ${zn.name} clear by guiding nearby fans toward the nearest open concourse.`,
+      conf:0.82, zone:i.zone});
+  });
+  if(sim.minute>=85){
+    const opts=ZONES.filter(z=>z.type==='transit'||z.type==='parking').sort((a,b)=>sim.ratio(a.id)-sim.ratio(b.id));
+    const best=opts[0];
+    recs.push({agent:'transport',severity:'low',
+      title:`Recommend ${best.name} for departure`,
+      exp:`Full time approaching. ${best.name} is the least congested egress option at ${pct(sim.ratio(best.id))} — promote it in the fan app.`,
+      conf:0.85, zone:best.id});
+  }
+  const rank={critical:4,high:3,medium:2,low:1};
+  return recs.sort((a,b)=> (rank[b.severity]-rank[a.severity]) || (b.conf-a.conf));
+}
+const pct = r => Math.round(Math.min(r,1.2)*100)+'%';
+
+/* ==========================================================================
+   Rendering
+   ========================================================================== */
+const LVLCOLOR={normal:'#16a34a',moderate:'#f59e0b',busy:'#ea580c',congested:'#dc2626'};
+function renderMap(el){
+  const W=520,H=420;
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-height:420px">`;
+  s+=`<rect x="0" y="0" width="${W}" height="${H}" rx="16" fill="#0b1f3a"/>`;
+  // pitch
+  s+=`<rect x="${W*0.30}" y="${H*0.36}" width="${W*0.40}" height="${H*0.28}" rx="10" fill="#0e7a34" stroke="#3ddc6b" stroke-width="1.5"/>`;
+  s+=`<line x1="${W*0.5}" y1="${H*0.36}" x2="${W*0.5}" y2="${H*0.64}" stroke="#3ddc6b" stroke-width="1"/>`;
+  s+=`<circle cx="${W*0.5}" cy="${H*0.5}" r="18" fill="none" stroke="#3ddc6b" stroke-width="1"/>`;
+  ZONES.forEach(zn=>{
+    const cx=zn.x*W, cy=zn.y*H, lvl=SIM.level(zn.id), col=LVLCOLOR[lvl];
+    const rad = zn.type==='seating'?26: zn.type==='concourse'?18:14;
+    s+=`<circle cx="${cx}" cy="${cy}" r="${rad}" fill="${col}" fill-opacity="0.85" stroke="#fff" stroke-width="1.2">
+        <title>${zn.name}: ${pct(SIM.ratio(zn.id))} (${lvl})</title></circle>`;
+    if(lvl==='congested'){ s+=`<circle cx="${cx}" cy="${cy}" r="${rad}" fill="none" stroke="${col}" stroke-width="2">
+        <animate attributeName="r" values="${rad};${rad+10};${rad}" dur="1.4s" repeatCount="indefinite"/>
+        <animate attributeName="stroke-opacity" values="0.9;0;0.9" dur="1.4s" repeatCount="indefinite"/></circle>`; }
+    s+=`<text class="zone-label" x="${cx}" y="${cy+3}" text-anchor="middle">${zn.name.split(' ')[0]}</text>`;
+  });
+  s+='</svg>';
+  el.innerHTML=s;
+}
+function recCard(r, withButtons){
+  const conf=Math.round(r.conf*100);
+  return `<div class="rec">
+    <div class="agent">${r.agent} agent
+      <span class="badge sev-${r.severity}" style="margin-left:6px">${r.severity}</span></div>
+    <div class="title">${r.title}</div>
+    <div class="exp">${r.exp}</div>
+    <div class="conf">Confidence ${conf}%</div>
+    <div class="bar"><i style="width:${conf}%"></i></div>
+    ${withButtons?`<div class="btns">
+       <button class="btn approve" onclick="decide(this,true)">Approve</button>
+       <button class="btn reject" onclick="decide(this,false)">Reject</button></div>`:''}
+  </div>`;
+}
+function decide(btn,ok){
+  const rec=btn.closest('.rec');
+  rec.querySelector('.btns').innerHTML = ok
+    ? '<span class="badge sev-low">Approved &amp; actioned</span>'
+    : '<span class="badge sev-high">Rejected</span>';
+}
+
+/* ---- Fan app screens ---- */
+let TAB='home';
+function renderFan(){
+  const body=document.getElementById('fanBody');
+  if(TAB==='home'){
+    body.innerHTML = `
+      <div class="hero">
+        <div class="greet">${IC.sun} Good evening, welcome</div>
+        <div class="match">Brazil vs Spain</div>
+        <div class="kick">FIFA World Cup 2026 &middot; Kickoff in 42 min</div>
+      </div>
+      <div class="actions">
+        ${act('navigate','Navigate')}${act('food','Food')}${act('transport','Transport')}
+        ${act('washroom','Washroom')}${act('access','Accessibility')}${act('emergency','Emergency')}
+      </div>
+      <h3 style="margin:18px 0 4px;font-size:13px;color:var(--muted);text-transform:uppercase">Live alerts</h3>
+      ${renderAlerts()}`;
+  } else if(TAB==='map'){
+    body.innerHTML = '<div id="fanMap"></div>'; renderMap(document.getElementById('fanMap'));
+  } else if(TAB==='ai'){
+    body.innerHTML = `
+      <div class="hero" style="background:linear-gradient(135deg,#12294c,#2563eb)">
+        <div class="match" style="font-size:18px">How can I help?</div>
+        <div class="kick">Tap a suggestion or ask by voice</div>
+      </div>
+      <div class="controls" style="margin-top:14px">
+        ${chip('Where is my seat?')}${chip('Least crowded gate')}
+        ${chip('Food near me')}${chip('Wheelchair route')}${chip('Best exit')}
+      </div>
+      <div id="aiAnswer" style="margin-top:14px"></div>`;
+  } else if(TAB==='alerts'){
+    body.innerHTML = `<h3 style="font-size:13px;color:var(--muted);text-transform:uppercase">All alerts</h3>${renderAlerts(true)}`;
+  } else {
+    body.innerHTML = `<div class="hero"><div class="match" style="font-size:18px">Alex Fan</div>
+      <div class="kick">Seat: North Stand &middot; Block N12 &middot; Row 8</div></div>
+      <p style="color:var(--muted);font-size:14px">Accessibility mode: Off &middot; Language: English</p>`;
+  }
+}
+function act(icon,label){ return `<div class="action" onclick="fanAction('${label}')">${IC[icon]}<span>${label}</span></div>`; }
+function chip(t){ return `<button class="btn ghost" onclick="fanAsk('${t}')">${t}</button>`; }
+function renderAlerts(all){
+  const items=ZONES.filter(z=> all? SIM.ratio(z.id)>=0.5 : SIM.ratio(z.id)>=0.8)
+    .sort((a,b)=>SIM.ratio(b.id)-SIM.ratio(a.id)).slice(0,6);
+  if(!items.length) return `<div class="alert"><span class="dot lvl-normal"></span>All clear — no congestion right now.</div>`;
+  return items.map(z=>`<div class="alert"><span class="dot lvl-${SIM.level(z.id)}"></span>
+     <div><b>${z.name}</b> is ${SIM.level(z.id)} (${pct(SIM.ratio(z.id))} full)</div></div>`).join('');
+}
+function fanAction(label){ TAB='ai'; renderFan(); fanAsk(label); syncTabs(); }
+function fanAsk(q){
+  const alt = ZONES.filter(z=>z.type==='gate').sort((a,b)=>SIM.ratio(a.id)-SIM.ratio(b.id))[0];
+  const map={
+    'Where is my seat?':{t:'Route to North Stand (3 min)',e:'Head through Gate 1 → West Concourse → North Stand. Step-free and currently uncongested.'},
+    'Least crowded gate':{t:`Use ${alt.name}`,e:`${alt.name} is the quietest entrance right now at ${pct(SIM.ratio(alt.id))} — about 4 minutes faster than the busiest gate.`},
+    'Food near me':{t:'Food Court A — 2 min',e:'Food Court A has the shortest queue nearby (about 6 min). Food Court B is busier.'},
+    'Wheelchair route':{t:'Step-free route ready',e:'A fully accessible route via ramps and lifts avoids all congested zones.'},
+    'Best exit':{t:'Exit via Metro',e:'After full time the Metro is the least congested way home. We will update this live as the match ends.'},
+  };
+  const a=map[q]||{t:'Here to help',e:'Try one of the suggestions above.'};
+  const box=document.getElementById('aiAnswer');
+  if(box) box.innerHTML=recCard({agent:'navigation',severity:'low',title:a.t,exp:a.e,conf:0.9},false);
+}
+function syncTabs(){ document.querySelectorAll('#tabbar button').forEach(b=>b.classList.toggle('active',b.dataset.tab===TAB)); }
+
+/* ---- Ops dashboard ---- */
+function renderOps(){
+  document.getElementById('kpiMinute').textContent=SIM.minute+"'";
+  document.getElementById('kpiAtt').textContent=SIM.attendance().toLocaleString();
+  document.getElementById('kpiHot').textContent=ZONES.filter(z=>SIM.level(z.id)==='congested').length;
+  document.getElementById('kpiInc').textContent=INCIDENTS.filter(i=>!i.resolved).length;
+  const recs=analyze(SIM,INCIDENTS);
+  document.getElementById('opsRecs').innerHTML = recs.length? recs.map(r=>recCard(r,true)).join('')
+    : '<p style="color:var(--muted)">No active recommendations. The stadium is running smoothly.</p>';
+  document.getElementById('opsIncidents').innerHTML = INCIDENTS.length? INCIDENTS.map(i=>{
+      const zn=ZONES.find(z=>z.id===i.zone);
+      return `<div><b>${i.severity.toUpperCase()}</b> ${i.type} @ ${zn.name} — ${i.desc}</div>`; }).join('')
+    : '<div>No incidents reported.</div>';
+  renderMap(document.getElementById('opsMapWrap'));
+}
+
+/* ==========================================================================
+   Guided 7-step demo runner
+   ========================================================================== */
+let SIM=new Sim(); let INCIDENTS=[]; let STEP=0;
+const STEPS=[
+  {msg:'<b>1. Fan enters the stadium.</b> Home screen shows the match and one-tap actions — no typing required.',
+   run:()=>{ TAB='home'; }},
+  {msg:'<b>2. AI routes the fan to the least crowded gate.</b> The assistant recommends the quietest entrance.',
+   run:()=>{ TAB='ai'; }},
+  {msg:'<b>3. Congestion builds at Gate 3.</b> Two buses just arrived — a surge is injected and the heatmap turns red.',
+   run:()=>{ SIM.injectSurge('gate_3',8000); for(let i=0;i<3;i++) SIM.tick(); }},
+  {msg:'<b>4. Operator receives an explained recommendation:</b> redirect fans from Gate 3 to a quieter gate. They approve it.',
+   run:()=>{ /* recs computed live in ops view */ }},
+  {msg:'<b>5. A medical incident occurs.</b> A critical incident at Medical 1 triggers volunteer dispatch.',
+   run:()=>{ INCIDENTS.push({type:'medical',severity:'critical',zone:'med_1',desc:'Fan collapsed in west concourse',resolved:false}); }},
+  {msg:'<b>6. Nearby fans are rerouted</b> to keep the medical response corridor clear.',
+   run:()=>{ for(let i=0;i<2;i++) SIM.tick(); }},
+  {msg:'<b>7. After full time, AI recommends the best exit & transport</b> based on live crowd conditions.',
+   run:()=>{ SIM.minute=90; for(let i=0;i<2;i++) SIM.tick(); }},
+];
+function logStep(html){ const l=document.getElementById('stepLog'); l.innerHTML=`<div>${html}</div>`+l.innerHTML; }
+function doStep(){
+  if(STEP>=STEPS.length){ logStep('<b>Demo complete.</b> Reset to run again.'); return false; }
+  const s=STEPS[STEP++]; s.run(); logStep(s.msg); rerender(); return true;
+}
+function playDemo(){ resetDemo(); const iv=setInterval(()=>{ if(!doStep()) clearInterval(iv); }, 1100); }
+function resetDemo(){ SIM=new Sim(); INCIDENTS=[]; STEP=0; document.getElementById('stepLog').innerHTML=''; rerender(); }
+function rerender(){ renderFan(); syncTabs(); renderMap(document.getElementById('mapWrap')); renderOps(); }
+
+/* ==========================================================================
+   Wiring
+   ========================================================================== */
+document.querySelectorAll('#viewSwitch button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#viewSwitch button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  const v=b.dataset.view;
+  document.getElementById('view-fan').style.display = v==='fan'?'grid':'none';
+  document.getElementById('view-ops').style.display = v==='ops'?'block':'none';
+  rerender();
+});
+document.querySelectorAll('#tabbar button').forEach(b=>b.onclick=()=>{ TAB=b.dataset.tab; renderFan(); syncTabs(); });
+['playDemo','playDemo2'].forEach(id=>document.getElementById(id).onclick=playDemo);
+['stepDemo','stepDemo2'].forEach(id=>document.getElementById(id).onclick=doStep);
+['resetDemo','resetDemo2'].forEach(id=>document.getElementById(id).onclick=resetDemo);
+
+/* ---- Google Maps (satellite) integration ---- */
+let GMAP=null, GMARKERS=[], GMODE=false;
+function loadGoogle(key){
+  return new Promise((res,rej)=>{
+    if(window.google&&window.google.maps) return res();
+    const s=document.createElement('script');
+    s.src=`https://maps.googleapis.com/maps/api/js?key=${key}&libraries=geometry`;
+    s.async=true; s.onload=res; s.onerror=rej; document.head.appendChild(s);
+  });
+}
+function renderGoogle(){
+  const g=window.google; const el=document.getElementById('mapWrap');
+  el.innerHTML='<div id="gmap" style="height:420px;border-radius:12px"></div>';
+  GMAP=new g.maps.Map(document.getElementById('gmap'),{
+    center:{lat:ANCHOR.lat,lng:ANCHOR.lng}, zoom:17, mapTypeId:'satellite',
+    disableDefaultUI:true, zoomControl:true });
+  refreshGoogleMarkers();
+}
+function refreshGoogleMarkers(){
+  if(!GMODE||!GMAP) return; const g=window.google;
+  GMARKERS.forEach(m=>m.setMap(null));
+  GMARKERS=ZONES.map(zn=>new g.maps.Marker({
+    position:{lat:zn.lat,lng:zn.lng}, map:GMAP,
+    title:`${zn.name} — ${pct(SIM.ratio(zn.id))} (${SIM.level(zn.id)})`,
+    icon:{ path:g.maps.SymbolPath.CIRCLE, scale: zn.type==='seating'?12:8,
+      fillColor:LVLCOLOR[SIM.level(zn.id)], fillOpacity:0.9,
+      strokeColor:'#fff', strokeWeight:1.5 } }));
+}
+document.getElementById('gmapsBtn').onclick=async()=>{
+  const key=googleKey();
+  if(!key){
+    // No key: open the real stadium in Google Maps in a new tab (still Google Maps).
+    window.open(`https://www.google.com/maps/search/?api=1&query=${ANCHOR.lat},${ANCHOR.lng}`,'_blank');
+    return;
+  }
+  if(GMODE){ GMODE=false; document.getElementById('gmapsBtn').textContent='Satellite (Google)'; renderMap(document.getElementById('mapWrap')); return; }
+  try{ await loadGoogle(key); GMODE=true;
+    document.getElementById('gmapsBtn').textContent='Heatmap (SVG)'; renderGoogle(); }
+  catch{ alert('Could not load Google Maps — check the key.'); }
+};
+/* Keep Google markers in sync; don't overwrite the Google map with the SVG. */
+rerender=function(){
+  renderFan(); syncTabs();
+  if(GMODE && GMAP){ refreshGoogleMarkers(); }
+  else { renderMap(document.getElementById('mapWrap')); }
+  renderOps();
+};
+
+rerender();
+</script>
+</body>
+</html>

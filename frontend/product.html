@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<!--
+  StadiumMind AI - Product shell (standalone, no build).
+  Flow: Language select (6 languages incl. RTL Arabic) -> Experience launcher
+  (4 cards) -> Fan / Ops / Maps / AI Chat simulated views. All iconography is
+  inline SVG (no emoji). Theme derives from the design-system tokens.
+-->
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>StadiumMind AI</title>
+<style>
+  :root{
+    --navy:#0b1f3a; --navy2:#12294c; --brand:#2563eb; --brandSoft:#dbeafe;
+    --success:#16a34a; --warning:#f59e0b; --busy:#ea580c; --danger:#dc2626;
+    --surface:#fff; --canvas:#f4f6fb; --text:#0f172a; --muted:#64748b;
+    --line:#e2e8f0; --radius:12px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--canvas);color:var(--text);
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  .wrap{max-width:1180px;margin:0 auto;padding:16px}
+  .center{min-height:100vh;display:flex;align-items:center;justify-content:center}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:22px;justify-content:center}
+  .brand .logo{color:var(--brand)}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+  .btn{border:0;border-radius:10px;padding:10px 18px;font-weight:700;cursor:pointer;font-size:15px}
+  .btn.primary{background:var(--brand);color:#fff}
+  .btn.ghost{background:var(--brandSoft);color:var(--brand)}
+  .btn.approve{background:var(--success);color:#fff}
+  .btn.reject{background:#fff;color:var(--danger);border:1px solid var(--danger)}
+  .muted{color:var(--muted)}
+
+  /* Language screen */
+  .lang-panel{width:min(560px,92vw);text-align:center}
+  .lang-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0}
+  .lang-tile{display:flex;align-items:center;gap:12px;border:1px solid var(--line);
+    border-radius:12px;padding:14px 16px;cursor:pointer;background:#fff;font-weight:600;font-size:16px}
+  .lang-tile:hover{border-color:var(--brand)}
+  .lang-tile.sel{border-color:var(--brand);background:var(--brandSoft)}
+  .flag{width:34px;height:24px;border-radius:4px;flex:none;border:1px solid rgba(0,0,0,.08)}
+
+  /* Launcher */
+  .exp-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:20px}
+  @media(max-width:720px){.exp-grid{grid-template-columns:1fr}}
+  .exp-card{border:1px solid var(--line);border-radius:16px;padding:22px;cursor:pointer;
+    background:#fff;transition:transform .15s,border-color .15s;display:flex;gap:16px;align-items:flex-start}
+  .exp-card:hover{transform:translateY(-2px);border-color:var(--brand)}
+  .exp-ic{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,var(--navy),var(--brand));color:#fff;flex:none}
+  .exp-card h3{margin:0 0 4px;font-size:18px}
+  .exp-card p{margin:0;font-size:13px;color:var(--muted)}
+
+  /* App chrome */
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .topbar .left{display:flex;align-items:center;gap:10px;font-weight:800}
+  .grid2{display:grid;grid-template-columns:380px 1fr;gap:16px;align-items:start}
+  @media(max-width:900px){.grid2{grid-template-columns:1fr}}
+  .phone{background:var(--navy);border-radius:28px;padding:12px}
+  .screen{background:#fff;border-radius:18px;overflow:hidden;min-height:560px;display:flex;flex-direction:column}
+  .screen-body{padding:16px;flex:1;overflow:auto}
+  .hero{background:linear-gradient(135deg,var(--navy),var(--brand));color:#fff;padding:18px;border-radius:14px}
+  .hero .greet{opacity:.85;font-size:13px;display:flex;align-items:center;gap:6px}
+  .hero .match{font-size:22px;font-weight:800;margin-top:6px}
+  .hero .kick{opacity:.85;font-size:13px;margin-top:2px}
+  .actions{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+  .action{border:1px solid var(--line);border-radius:12px;padding:12px 8px;text-align:center;cursor:pointer;background:#fff}
+  .action:hover{border-color:var(--brand)} .action .ic{color:var(--brand)}
+  .action span{display:block;font-size:12px;margin-top:6px;font-weight:600}
+  .alert{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:10px;border:1px solid var(--line);margin-top:8px}
+  .dot{width:10px;height:10px;border-radius:50%;margin-top:4px;flex:none}
+  .lvl-normal{background:var(--success)} .lvl-moderate{background:var(--warning)}
+  .lvl-busy{background:var(--busy)} .lvl-congested{background:var(--danger)}
+  .rec{border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+  .rec .agent{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--brand);font-weight:700}
+  .rec .title{font-weight:700;margin:4px 0}.rec .exp{color:var(--muted);font-size:14px}
+  .rec .conf{font-size:12px;color:var(--muted);margin-top:8px}
+  .bar{height:6px;background:var(--line);border-radius:999px;overflow:hidden;margin-top:4px}
+  .bar>i{display:block;height:100%;background:var(--brand)}
+  .badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;margin-inline-start:6px}
+  .sev-critical{background:#fee2e2;color:var(--danger)}.sev-high{background:#ffedd5;color:var(--busy)}
+  .sev-medium{background:#fef9c3;color:#a16207}.sev-low{background:#dcfce7;color:var(--success)}
+  .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+  .kpi .k{background:var(--navy);color:#fff;border-radius:12px;padding:12px}
+  .kpi .k .n{font-size:22px;font-weight:800}.kpi .k .l{font-size:11px;opacity:.8}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:10px}
+  .legend i{width:10px;height:10px;border-radius:50%;display:inline-block;margin-inline-end:5px}
+  .zone-label{font-size:9px;fill:#fff;font-weight:600;pointer-events:none}
+  .tabbar{display:flex;border-top:1px solid var(--line)}
+  .tabbar button{flex:1;border:0;background:transparent;padding:10px 0 12px;color:var(--muted);
+    font-size:11px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px}
+  .tabbar button.active{color:var(--brand)}
+  .chat-row{display:flex;margin:8px 0}.chat-row.me{justify-content:flex-end}
+  .bubble{max-width:80%;padding:10px 12px;border-radius:14px;font-size:14px}
+  .bubble.ai{background:#f1f5f9}.bubble.me{background:var(--brand);color:#fff}
+  .suggest{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+  [dir="rtl"] .action,[dir="rtl"] .hero{text-align:right}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script>
+/* =========================================================================
+   i18n - 6 launch languages (Arabic is RTL).
+   ========================================================================= */
+const I18N = {
+  en:{name:"English",dir:"ltr",chooseLang:"Choose your language",continue:"Continue",
+     chooseExp:"Choose an experience",fan:"Fan App",ops:"Operations Center",maps:"Stadium Map",ai:"AI Assistant",
+     fanDesc:"Match info, wayfinding, alerts",opsDesc:"Heatmap, AI recommendations, incidents",
+     mapsDesc:"Live congestion on the real ground",aiDesc:"Ask anything, get an explained answer",
+     greet:"Good evening, welcome",kick:"Kickoff in 42 min",navigate:"Navigate",food:"Food",transport:"Transport",
+     washroom:"Washroom",access:"Accessibility",emergency:"Emergency",liveAlerts:"Live alerts",allClear:"All clear — no congestion right now.",
+     recs:"AI recommendations",approve:"Approve",reject:"Reject",attendance:"Attendance",congested:"Congested zones",
+     incidents:"Open incidents",minute:"Match minute",help:"How can I help?",back:"Back",play:"Play demo",
+     langLabel:"Language",satellite:"Satellite (Google)",busyAt:"is",full:"full"},
+  es:{name:"Español",dir:"ltr",chooseLang:"Elige tu idioma",continue:"Continuar",
+     chooseExp:"Elige una experiencia",fan:"App de Aficionado",ops:"Centro de Operaciones",maps:"Mapa del Estadio",ai:"Asistente IA",
+     fanDesc:"Partido, orientación y alertas",opsDesc:"Mapa de calor, recomendaciones, incidentes",
+     mapsDesc:"Congestión en vivo sobre el terreno",aiDesc:"Pregunta y recibe una respuesta explicada",
+     greet:"Buenas noches, bienvenido",kick:"Inicio en 42 min",navigate:"Navegar",food:"Comida",transport:"Transporte",
+     washroom:"Baño",access:"Accesibilidad",emergency:"Emergencia",liveAlerts:"Alertas en vivo",allClear:"Todo despejado — sin congestión ahora.",
+     recs:"Recomendaciones de IA",approve:"Aprobar",reject:"Rechazar",attendance:"Asistencia",congested:"Zonas congestionadas",
+     incidents:"Incidentes abiertos",minute:"Minuto del partido",help:"¿Cómo puedo ayudar?",back:"Atrás",play:"Reproducir",
+     langLabel:"Idioma",satellite:"Satélite (Google)",busyAt:"está",full:"lleno"},
+  fr:{name:"Français",dir:"ltr",chooseLang:"Choisissez votre langue",continue:"Continuer",
+     chooseExp:"Choisissez une expérience",fan:"Appli Supporter",ops:"Centre d'Opérations",maps:"Plan du Stade",ai:"Assistant IA",
+     fanDesc:"Match, orientation et alertes",opsDesc:"Carte de chaleur, recommandations, incidents",
+     mapsDesc:"Affluence en direct sur le terrain",aiDesc:"Posez une question, réponse expliquée",
+     greet:"Bonsoir, bienvenue",kick:"Coup d'envoi dans 42 min",navigate:"Naviguer",food:"Restauration",transport:"Transport",
+     washroom:"Toilettes",access:"Accessibilité",emergency:"Urgence",liveAlerts:"Alertes en direct",allClear:"Tout est clair — aucune affluence.",
+     recs:"Recommandations IA",approve:"Approuver",reject:"Rejeter",attendance:"Affluence",congested:"Zones saturées",
+     incidents:"Incidents ouverts",minute:"Minute du match",help:"Comment puis-je aider ?",back:"Retour",play:"Lancer",
+     langLabel:"Langue",satellite:"Satellite (Google)",busyAt:"est",full:"plein"},
+  pt:{name:"Português",dir:"ltr",chooseLang:"Escolha o seu idioma",continue:"Continuar",
+     chooseExp:"Escolha uma experiência",fan:"App do Torcedor",ops:"Central de Operações",maps:"Mapa do Estádio",ai:"Assistente IA",
+     fanDesc:"Jogo, orientação e alertas",opsDesc:"Mapa de calor, recomendações, incidentes",
+     mapsDesc:"Lotação ao vivo no terreno real",aiDesc:"Pergunte e receba uma resposta explicada",
+     greet:"Boa noite, bem-vindo",kick:"Início em 42 min",navigate:"Navegar",food:"Comida",transport:"Transporte",
+     washroom:"Banheiro",access:"Acessibilidade",emergency:"Emergência",liveAlerts:"Alertas ao vivo",allClear:"Tudo tranquilo — sem lotação agora.",
+     recs:"Recomendações de IA",approve:"Aprovar",reject:"Rejeitar",attendance:"Público",congested:"Zonas lotadas",
+     incidents:"Incidentes abertos",minute:"Minuto do jogo",help:"Como posso ajudar?",back:"Voltar",play:"Reproduzir",
+     langLabel:"Idioma",satellite:"Satélite (Google)",busyAt:"está",full:"cheio"},
+  ar:{name:"العربية",dir:"rtl",chooseLang:"اختر لغتك",continue:"متابعة",
+     chooseExp:"اختر تجربة",fan:"تطبيق المشجع",ops:"مركز العمليات",maps:"خريطة الملعب",ai:"المساعد الذكي",
+     fanDesc:"معلومات المباراة والإرشاد والتنبيهات",opsDesc:"خريطة حرارية وتوصيات وحوادث",
+     mapsDesc:"الازدحام المباشر على أرض الملعب",aiDesc:"اسأل أي شيء واحصل على إجابة موضحة",
+     greet:"مساء الخير، أهلاً بك",kick:"انطلاق المباراة بعد 42 دقيقة",navigate:"التنقل",food:"طعام",transport:"مواصلات",
+     washroom:"دورة المياه",access:"إتاحة الوصول",emergency:"طوارئ",liveAlerts:"تنبيهات مباشرة",allClear:"كل شيء هادئ — لا ازدحام الآن.",
+     recs:"توصيات الذكاء الاصطناعي",approve:"موافقة",reject:"رفض",attendance:"الحضور",congested:"مناطق مزدحمة",
+     incidents:"حوادث مفتوحة",minute:"دقيقة المباراة",help:"كيف يمكنني المساعدة؟",back:"رجوع",play:"تشغيل",
+     langLabel:"اللغة",satellite:"قمر صناعي (Google)",busyAt:"",full:"ممتلئ"},
+  de:{name:"Deutsch",dir:"ltr",chooseLang:"Wählen Sie Ihre Sprache",continue:"Weiter",
+     chooseExp:"Erlebnis wählen",fan:"Fan-App",ops:"Leitstelle",maps:"Stadionplan",ai:"KI-Assistent",
+     fanDesc:"Spielinfos, Wegführung, Hinweise",opsDesc:"Heatmap, KI-Empfehlungen, Vorfälle",
+     mapsDesc:"Live-Andrang auf dem echten Gelände",aiDesc:"Fragen Sie – erklärte Antwort",
+     greet:"Guten Abend, willkommen",kick:"Anpfiff in 42 Min",navigate:"Navigieren",food:"Essen",transport:"Verkehr",
+     washroom:"WC",access:"Barrierefreiheit",emergency:"Notfall",liveAlerts:"Live-Hinweise",allClear:"Alles frei — derzeit kein Andrang.",
+     recs:"KI-Empfehlungen",approve:"Freigeben",reject:"Ablehnen",attendance:"Zuschauer",congested:"Überfüllte Zonen",
+     incidents:"Offene Vorfälle",minute:"Spielminute",help:"Wie kann ich helfen?",back:"Zurück",play:"Abspielen",
+     langLabel:"Sprache",satellite:"Satellit (Google)",busyAt:"ist",full:"voll"},
+};
+/* Simple two-band SVG flags (no external assets). */
+function flag(code){
+  const f={
+    en:['#00247d','#ffffff'],es:['#aa151b','#f1bf00'],fr:['#0055a4','#ef4135'],
+    pt:['#046a38','#da291c'],ar:['#006c35','#ffffff'],de:['#000000','#dd0000']
+  }[code];
+  return `<svg class="flag" viewBox="0 0 34 24"><rect width="34" height="12" fill="${f[0]}"/><rect y="12" width="34" height="12" fill="${f[1]}"/></svg>`;
+}
+
+/* =========================================================================
+   Icons
+   ========================================================================= */
+const IC={
+  home:svg('M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10'),map:svg('M9 3L3 6v15l6-3 6 3 6-3V3l-6 3-6-3z M9 3v15 M15 6v15'),
+  ai:svg('M12 3a4 4 0 014 4v1a4 4 0 010 8v1a4 4 0 01-8 0v-1a4 4 0 010-8V7a4 4 0 014-4z'),
+  bell:svg('M6 8a6 6 0 1112 0c0 7 3 9 3 9H3s3-2 3-9 M10 21a2 2 0 004 0'),user:svg('M4 21v-2a5 5 0 015-5h6a5 5 0 015 5v2 M12 3a4 4 0 100 8 4 4 0 000-8z'),
+  navigate:svg('M3 11l19-9-9 19-2-8-8-2z'),food:svg('M4 3v7a3 3 0 006 0V3 M7 3v18 M17 3c-2 0-3 2-3 5s1 5 3 5v8'),
+  transport:svg('M4 16V6a2 2 0 012-2h12a2 2 0 012 2v10 M4 16h16 M8 20v0 M16 20v0 M4 10h16'),
+  washroom:svg('M7 4a2 2 0 104 0 2 2 0 00-4 0z M6 21v-6H4l2-6h4l2 6h-2v6z M17 3v18 M14 8h6'),
+  access:svg('M12 4a2 2 0 100 4 2 2 0 000-4z M8 8l4 1 3 3 M12 9v4l3 5 M8 14a4 4 0 105 5'),
+  emergency:svg('M12 2l9 16H3L12 2z M12 9v4 M12 17v0'),sun:svg('M12 4V2 M12 22v-2 M4 12H2 M22 12h-2 M12 8a4 4 0 100 8 4 4 0 000-8z'),
+  ops:svg('M3 3v18h18 M7 15l3-4 3 2 4-6'),
+};
+function svg(p,s=22){return `<svg class="ic" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${p}"/></svg>`;}
+
+/* =========================================================================
+   Venue + simulation (condensed mirror of the backend)
+   ========================================================================= */
+const ANCHOR={name:'MetLife Stadium',lat:40.81357,lng:-74.07429,footprint:320};
+const ZONES=[
+  z('gate_1','Gate 1','gate',.10,.15,4000,8),z('gate_3','Gate 3','gate',.90,.15,4000,8),
+  z('gate_5','Gate 5','gate',.10,.85,4000,8),z('gate_7','Gate 7','gate',.90,.85,4000,8),
+  z('conc_n','N. Concourse','concourse',.5,.2,6000),z('conc_s','S. Concourse','concourse',.5,.8,6000),
+  z('conc_e','E. Concourse','concourse',.8,.5,6000),z('conc_w','W. Concourse','concourse',.2,.5,6000),
+  z('stand_n','North Stand','seating',.5,.33,15000),z('stand_s','South Stand','seating',.5,.67,15000),
+  z('stand_e','East Stand','seating',.67,.5,15000),z('stand_w','West Stand','seating',.33,.5,15000),
+  z('food_a','Food A','food',.35,.26,400,6),z('food_b','Food B','food',.65,.74,400,6),
+  z('wc_n','WC North','washroom',.43,.22,120,10),z('med_1','Medical 1','medical',.25,.55,40,2),
+  z('parking','Parking','parking',.05,.5,3000),z('metro','Metro','transit',.95,.5,8000,12),
+];
+function z(id,name,type,x,y,cap,sp=0){return {id,name,type,x,y,capacity:cap,sp};}
+const TARGET={gate:.30,concourse:.35,seating:.20,food:.45,washroom:.40,medical:.08,parking:.55,transit:.40};
+const LVLCOLOR={normal:'#16a34a',moderate:'#f59e0b',busy:'#ea580c',congested:'#dc2626'};
+class Sim{
+  constructor(){this.minute=0;this.occ={};this.surge={};ZONES.forEach(z=>this.occ[z.id]=0);this.warmup(5);}
+  target(t){return t==='seating'?Math.min(.9,.2+.015*this.minute):(TARGET[t]||.2);}
+  tick(){this.minute++;ZONES.forEach(zn=>{const tgt=this.target(zn.type)*zn.capacity,cur=this.occ[zn.id];
+    const d=(tgt-cur)*.35,n=(Math.random()-.5)*zn.capacity*.02,s=this.surge[zn.id]||0;
+    this.occ[zn.id]=Math.max(0,Math.min(Math.round(cur+d+n+s),Math.round(zn.capacity*1.2)));});
+    const nx={};for(const k in this.surge){const r=Math.floor(this.surge[k]*.6);if(r>0)nx[k]=r;}this.surge=nx;}
+  warmup(n){for(let i=0;i<n;i++)this.tick();}
+  surgeZone(id,p){this.surge[id]=(this.surge[id]||0)+p;}
+  ratio(id){return this.occ[id]/ZONES.find(z=>z.id===id).capacity;}
+  level(id){const r=this.ratio(id);return r>=.9?'congested':r>=.75?'busy':r>=.5?'moderate':'normal';}
+  attendance(){return ZONES.filter(z=>z.type==='seating').reduce((a,z)=>a+this.occ[z.id],0);}
+}
+function analyze(sim){
+  const recs=[];
+  ZONES.filter(z=>z.type==='gate').forEach(g=>{
+    const r=sim.ratio(g.id);
+    if(r>=.8){const alt=ZONES.filter(z=>z.type==='gate'&&z.id!==g.id).sort((a,b)=>sim.ratio(a.id)-sim.ratio(b.id))[0];
+      recs.push({agent:'crowd',sev:r>=.9?'high':'medium',
+        title:`Redirect fans from ${g.name} to ${alt.name}`,
+        exp:`${g.name} ${pct(r)} full; ${alt.name} only ${pct(sim.ratio(alt.id))} — divert arrivals to cut wait times.`,
+        conf:Math.min(.95,.6+r*.35)});}
+  });
+  const rank={critical:4,high:3,medium:2,low:1};
+  return recs.sort((a,b)=>(rank[b.sev]-rank[a.sev])||(b.conf-a.conf));
+}
+const pct=r=>Math.round(Math.min(r,1.2)*100)+'%';
+
+/* =========================================================================
+   State + rendering
+   ========================================================================= */
+let LANG='en', SIM=new Sim(), TAB='home';
+const T=()=>I18N[LANG];
+const root=document.getElementById('root');
+
+function setLang(code){LANG=code;document.documentElement.lang=code;document.documentElement.dir=I18N[code].dir;}
+
+/* ---- Screen: language ---- */
+function viewLanguage(){
+  const t=I18N.en; // show neutral title in English + native names on tiles
+  root.innerHTML=`<div class="center"><div class="lang-panel">
+    <div class="brand">${logo()} StadiumMind <span style="color:var(--brand)">AI</span></div>
+    <h2 style="margin-top:18px">${t.chooseLang}</h2>
+    <div class="lang-grid">${Object.keys(I18N).map(c=>`
+      <div class="lang-tile ${c===LANG?'sel':''}" data-l="${c}">${flag(c)}<span>${I18N[c].name}</span></div>`).join('')}</div>
+    <button class="btn primary" id="langGo">${T().continue}</button>
+  </div></div>`;
+  root.querySelectorAll('.lang-tile').forEach(el=>el.onclick=()=>{setLang(el.dataset.l);
+    root.querySelectorAll('.lang-tile').forEach(x=>x.classList.remove('sel'));el.classList.add('sel');
+    document.getElementById('langGo').textContent=T().continue;});
+  document.getElementById('langGo').onclick=viewLauncher;
+}
+
+/* ---- Screen: experience launcher ---- */
+function viewLauncher(){
+  const t=T();
+  const def=[
+    {k:'fan',ic:IC.user,title:t.fan,desc:t.fanDesc},
+    {k:'ops',ic:IC.ops,title:t.ops,desc:t.opsDesc},
+    {k:'maps',ic:IC.map,title:t.maps,desc:t.mapsDesc},
+    {k:'ai',ic:IC.ai,title:t.ai,desc:t.aiDesc},
+  ];
+  root.innerHTML=`<div class="wrap">
+    <div class="topbar"><div class="left">${logo()} StadiumMind AI</div>
+      <button class="btn ghost" id="chLang">${t.langLabel}: ${I18N[LANG].name}</button></div>
+    <h2>${t.chooseExp}</h2>
+    <div class="exp-grid">${def.map(c=>`
+      <div class="exp-card" data-go="${c.k}"><div class="exp-ic">${c.ic}</div>
+        <div><h3>${c.title}</h3><p>${c.desc}</p></div></div>`).join('')}</div>
+  </div>`;
+  document.getElementById('chLang').onclick=viewLanguage;
+  root.querySelectorAll('.exp-card').forEach(el=>el.onclick=()=>openExp(el.dataset.go));
+}
+function openExp(k){SIM=new Sim();
+  if(k==='fan'){TAB='home';viewFan();}
+  else if(k==='ops') viewOps();
+  else if(k==='maps') viewMaps();
+  else viewAI();
+}
+
+/* ---- shared app chrome ---- */
+function appHeader(title){const t=T();
+  return `<div class="topbar"><div class="left">${logo()} ${title}</div>
+    <button class="btn ghost" id="home">${t.back}</button></div>`;}
+function wireBack(){const b=document.getElementById('home');if(b)b.onclick=viewLauncher;}
+
+/* ---- Fan ---- */
+function viewFan(){const t=T();
+  root.innerHTML=`<div class="wrap">${appHeader(t.fan)}
+    <div class="grid2">
+      <div class="phone"><div class="screen">
+        <div class="screen-body" id="fanBody"></div>
+        <nav class="tabbar" id="tabbar">
+          <button data-tab="home" class="active">${IC.home}<span>${t.fan.split(' ')[0]}</span></button>
+          <button data-tab="map">${IC.map}<span>${t.maps.split(' ')[0]}</span></button>
+          <button data-tab="ai">${IC.ai}<span>AI</span></button>
+          <button data-tab="alerts">${IC.bell}<span>${t.liveAlerts.split(' ')[0]}</span></button>
+          <button data-tab="profile">${IC.user}<span>${t.langLabel}</span></button>
+        </nav>
+      </div></div>
+      <div class="card"><h3 class="muted" style="text-transform:uppercase;font-size:12px">${t.maps}</h3>
+        <div id="fanMap"></div>
+        <div class="legend">${legend()}</div>
+        <div style="margin-top:12px"><button class="btn approve" id="surge">${t.play}</button></div>
+      </div>
+    </div></div>`;
+  wireBack();
+  root.querySelectorAll('#tabbar button').forEach(b=>b.onclick=()=>{TAB=b.dataset.tab;renderFanBody();
+    root.querySelectorAll('#tabbar button').forEach(x=>x.classList.toggle('active',x.dataset.tab===TAB));});
+  document.getElementById('surge').onclick=()=>{SIM.surgeZone('gate_3',8000);for(let i=0;i<3;i++)SIM.tick();renderFanBody();renderMap('fanMap');};
+  renderFanBody(); renderMap('fanMap');
+}
+function renderFanBody(){const t=T();const b=document.getElementById('fanBody');if(!b)return;
+  if(TAB==='home'){
+    b.innerHTML=`<div class="hero"><div class="greet">${IC.sun} ${t.greet}</div>
+      <div class="match">Brazil vs Spain</div><div class="kick">FIFA World Cup 2026 · ${t.kick}</div></div>
+      <div class="actions">${[['navigate','navigate'],['food','food'],['transport','transport'],['washroom','washroom'],['access','access'],['emergency','emergency']].map(([ic,key])=>`<div class="action">${IC[ic]}<span>${t[key]}</span></div>`).join('')}</div>
+      <h3 style="margin:16px 0 4px;font-size:12px" class="muted">${t.liveAlerts.toUpperCase()}</h3>${alerts()}`;
+  }else if(TAB==='map'){b.innerHTML='<div id="fbmap"></div>';renderMap('fbmap');}
+  else if(TAB==='ai'){b.innerHTML=aiPanel();wireAI();}
+  else if(TAB==='alerts'){b.innerHTML=`<h3 class="muted" style="font-size:12px">${t.liveAlerts.toUpperCase()}</h3>${alerts(true)}`;}
+  else {b.innerHTML=`<div class="hero"><div class="match" style="font-size:18px">Alex Fan</div>
+      <div class="kick">North Stand · N12 · Row 8</div></div>
+      <p class="muted" style="font-size:14px;margin-top:10px">${t.langLabel}: ${I18N[LANG].name}</p>`;}
+}
+function alerts(all){const t=T();
+  const items=ZONES.filter(z=>all?SIM.ratio(z.id)>=.5:SIM.ratio(z.id)>=.8).sort((a,b)=>SIM.ratio(b.id)-SIM.ratio(a.id)).slice(0,6);
+  if(!items.length)return `<div class="alert"><span class="dot lvl-normal"></span>${t.allClear}</div>`;
+  return items.map(z=>`<div class="alert"><span class="dot lvl-${SIM.level(z.id)}"></span>
+    <div><b>${z.name}</b> ${t.busyAt} ${SIM.level(z.id)} (${pct(SIM.ratio(z.id))} ${t.full})</div></div>`).join('');
+}
+
+/* ---- Ops ---- */
+function viewOps(){const t=T();SIM.surgeZone('gate_3',6000);for(let i=0;i<3;i++)SIM.tick();
+  root.innerHTML=`<div class="wrap">${appHeader(t.ops)}
+    <div class="kpi">
+      <div class="k"><div class="n">${SIM.minute}'</div><div class="l">${t.minute}</div></div>
+      <div class="k"><div class="n">${SIM.attendance().toLocaleString()}</div><div class="l">${t.attendance}</div></div>
+      <div class="k"><div class="n">${ZONES.filter(z=>SIM.level(z.id)==='congested').length}</div><div class="l">${t.congested}</div></div>
+      <div class="k"><div class="n">0</div><div class="l">${t.incidents}</div></div></div>
+    <div class="grid2">
+      <div class="card"><h3 class="muted" style="font-size:12px;text-transform:uppercase">${t.recs}</h3><div id="opsRecs"></div></div>
+      <div class="card"><h3 class="muted" style="font-size:12px;text-transform:uppercase">${t.maps}</h3>
+        <div id="opsMap"></div><div class="legend">${legend()}</div></div>
+    </div></div>`;
+  wireBack();
+  const recs=analyze(SIM);
+  document.getElementById('opsRecs').innerHTML=recs.length?recs.map(recCard).join(''):`<p class="muted">${t.allClear}</p>`;
+  root.querySelectorAll('.rec .btns .approve,.rec .btns .reject').forEach(btn=>btn.onclick=()=>{
+    const ok=btn.classList.contains('approve');btn.closest('.btns').innerHTML=ok?
+      `<span class="badge sev-low">✓ ${t.approve}</span>`:`<span class="badge sev-high">${t.reject}</span>`;});
+  renderMap('opsMap');
+}
+function recCard(r){const t=T();const c=Math.round(r.conf*100);
+  return `<div class="rec"><div class="agent">${r.agent} <span class="badge sev-${r.sev}">${r.sev}</span></div>
+    <div class="title">${r.title}</div><div class="exp">${r.exp}</div>
+    <div class="conf">${c}%</div><div class="bar"><i style="width:${c}%"></i></div>
+    <div class="btns" style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn approve">${t.approve}</button><button class="btn reject">${t.reject}</button></div></div>`;
+}
+
+/* ---- Maps ---- */
+function viewMaps(){const t=T();
+  root.innerHTML=`<div class="wrap">${appHeader(t.maps)}
+    <div class="card"><div style="display:flex;justify-content:space-between;align-items:center">
+      <h3 class="muted" style="font-size:12px;text-transform:uppercase">${ANCHOR.name}</h3>
+      <button class="btn ghost" id="sat">${t.satellite}</button></div>
+      <div id="bigMap"></div><div class="legend">${legend()}</div>
+      <div style="margin-top:12px"><button class="btn approve" id="surge2">${t.play}</button></div>
+    </div></div>`;
+  wireBack();
+  renderMap('bigMap',560,440);
+  document.getElementById('surge2').onclick=()=>{SIM.surgeZone('gate_3',8000);for(let i=0;i<3;i++)SIM.tick();renderMap('bigMap',560,440);};
+  document.getElementById('sat').onclick=()=>window.open(`https://www.google.com/maps/search/?api=1&query=${ANCHOR.lat},${ANCHOR.lng}`,'_blank');
+}
+
+/* ---- AI chat ---- */
+function viewAI(){const t=T();
+  root.innerHTML=`<div class="wrap">${appHeader(t.ai)}
+    <div class="card" style="max-width:640px;margin:0 auto">${aiPanel()}</div></div>`;
+  wireBack(); wireAI();
+}
+function aiPanel(){const t=T();
+  return `<div class="hero" style="background:linear-gradient(135deg,#12294c,#2563eb)">
+      <div class="match" style="font-size:18px">${t.help}</div></div>
+    <div class="suggest">
+      ${['Where is my seat?','Least crowded gate','Food near me','Wheelchair route','Best exit'].map(s=>`<button class="btn ghost sg">${s}</button>`).join('')}</div>
+    <div id="chat"></div>`;
+}
+function wireAI(){
+  root.querySelectorAll('.sg').forEach(b=>b.onclick=()=>askAI(b.textContent));
+}
+function askAI(q){
+  const alt=ZONES.filter(z=>z.type==='gate').sort((a,b)=>SIM.ratio(a.id)-SIM.ratio(b.id))[0];
+  const map={
+    'Where is my seat?':`Head via Gate 1 → West Concourse → North Stand. Step-free, ~3 min, uncongested.`,
+    'Least crowded gate':`${alt.name} is quietest now (${pct(SIM.ratio(alt.id))}) — about 4 min faster than the busiest gate.`,
+    'Food near me':`Food Court A has the shortest queue nearby (~6 min).`,
+    'Wheelchair route':`A fully step-free route via ramps and lifts avoids all congested zones.`,
+    'Best exit':`After full time the Metro is the least congested way home; we'll update live.`,
+  };
+  const chat=document.getElementById('chat');
+  chat.innerHTML+=`<div class="chat-row me"><div class="bubble me">${q}</div></div>
+    <div class="chat-row"><div class="bubble ai">${map[q]||'Here to help.'}</div></div>`;
+  chat.scrollTop=chat.scrollHeight;
+}
+
+/* ---- map + helpers ---- */
+function renderMap(elId,W=520,H=420){const el=document.getElementById(elId);if(!el)return;
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-height:${H}px"><rect width="${W}" height="${H}" rx="16" fill="#0b1f3a"/>`;
+  s+=`<rect x="${W*.3}" y="${H*.36}" width="${W*.4}" height="${H*.28}" rx="10" fill="#0e7a34" stroke="#3ddc6b" stroke-width="1.5"/>`;
+  s+=`<circle cx="${W*.5}" cy="${H*.5}" r="18" fill="none" stroke="#3ddc6b"/>`;
+  ZONES.forEach(zn=>{const cx=zn.x*W,cy=zn.y*H,lvl=SIM.level(zn.id),col=LVLCOLOR[lvl];
+    const r=zn.type==='seating'?26:zn.type==='concourse'?18:14;
+    s+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${col}" fill-opacity="0.85" stroke="#fff" stroke-width="1.2"><title>${zn.name}: ${pct(SIM.ratio(zn.id))}</title></circle>`;
+    if(lvl==='congested')s+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${col}" stroke-width="2"><animate attributeName="r" values="${r};${r+10};${r}" dur="1.4s" repeatCount="indefinite"/><animate attributeName="stroke-opacity" values="0.9;0;0.9" dur="1.4s" repeatCount="indefinite"/></circle>`;
+    s+=`<text class="zone-label" x="${cx}" y="${cy+3}" text-anchor="middle">${zn.name.split(' ')[0]}</text>`;});
+  el.innerHTML=s+'</svg>';
+}
+function legend(){const t=T();return `<span><i class="lvl-normal"></i>normal</span><span><i class="lvl-moderate"></i>moderate</span><span><i class="lvl-busy"></i>busy</span><span><i class="lvl-congested"></i>congested</span>`;}
+function logo(){return `<svg class="logo" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="12" rx="9" ry="6"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>`;}
+
+viewLanguage();
+</script>
+</body>
+</html>
