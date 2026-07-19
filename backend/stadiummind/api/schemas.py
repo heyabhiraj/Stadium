@@ -18,8 +18,9 @@ from stadiummind.core.models import (
 
 
 class LoginRequest(BaseModel):
-    username: str
-    role: str = Field(default="fan")
+    # Bounded, pattern-checked to reject control chars / oversized payloads.
+    username: str = Field(min_length=1, max_length=64, pattern=r"^[\w .@-]+$")
+    role: str = Field(default="fan", max_length=32)
 
 
 class TokenResponse(BaseModel):
@@ -100,15 +101,17 @@ class RecommendationOut(BaseModel):
 
 
 class QueryRequest(BaseModel):
-    intent: str
+    # Intent is a short slug; params is a small free-form bag validated downstream.
+    intent: str = Field(min_length=1, max_length=48, pattern=r"^[a-z_]+$")
     params: dict = Field(default_factory=dict)
 
 
 class IncidentRequest(BaseModel):
     type: IncidentType
     severity: Severity
-    zone_id: str
-    description: str
+    zone_id: str = Field(min_length=1, max_length=64)
+    # Free text is bounded to cap payload size and limit LLM prompt exposure.
+    description: str = Field(min_length=1, max_length=500)
 
 
 class IncidentOut(BaseModel):

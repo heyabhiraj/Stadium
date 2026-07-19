@@ -92,6 +92,10 @@ class StadiumService:
         """Force a crowd surge (used by the demo to trigger congestion)."""
         if people <= 0:
             raise ValueError("surge size must be a positive number of people")
+        if people > self.settings.max_surge_people:
+            raise ValueError(
+                f"surge size must not exceed {self.settings.max_surge_people}"
+            )
         with self._lock:
             self.simulator.inject_surge(zone_id, people)
 

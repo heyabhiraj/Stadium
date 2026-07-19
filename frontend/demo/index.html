@@ -105,6 +105,10 @@
   .step-log { font-size: 13px; color: var(--muted); max-height: 160px; overflow-y: auto; }
   .step-log div { padding: 4px 0; border-bottom: 1px dashed var(--line); }
   .step-log b { color: var(--text); }
+  :focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; border-radius: 8px; }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; }
+  }
 </style>
 </head>
 <body>
@@ -220,10 +224,12 @@ const IC = {
   sun: svg('M12 4V2 M12 22v-2 M4 12H2 M22 12h-2 M6 6L4.5 4.5 M18 18l1.5 1.5 M6 18l-1.5 1.5 M18 6l1.5-1.5 M12 8a4 4 0 100 8 4 4 0 000-8z'),
 };
 function svg(path, size=22){
-  return `<svg class="ic" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none"
+  return `<svg class="ic" aria-hidden="true" focusable="false" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none"
     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="${path}"/></svg>`;
 }
+/* Respect the user's reduced-motion preference for the congestion pulse. */
+const REDUCED_MOTION = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 /* Inject tab icons into the markup placeholders. */
 document.body.innerHTML = document.body.innerHTML
   .replace('__ICON_home__', IC.home).replace('__ICON_map__', IC.map)
@@ -352,7 +358,7 @@ function renderMap(el){
     const rad = zn.type==='seating'?26: zn.type==='concourse'?18:14;
     s+=`<circle cx="${cx}" cy="${cy}" r="${rad}" fill="${col}" fill-opacity="0.85" stroke="#fff" stroke-width="1.2">
         <title>${zn.name}: ${pct(SIM.ratio(zn.id))} (${lvl})</title></circle>`;
-    if(lvl==='congested'){ s+=`<circle cx="${cx}" cy="${cy}" r="${rad}" fill="none" stroke="${col}" stroke-width="2">
+    if(lvl==='congested' && !REDUCED_MOTION){ s+=`<circle cx="${cx}" cy="${cy}" r="${rad}" fill="none" stroke="${col}" stroke-width="2">
         <animate attributeName="r" values="${rad};${rad+10};${rad}" dur="1.4s" repeatCount="indefinite"/>
         <animate attributeName="stroke-opacity" values="0.9;0;0.9" dur="1.4s" repeatCount="indefinite"/></circle>`; }
     s+=`<text class="zone-label" x="${cx}" y="${cy+3}" text-anchor="middle">${zn.name.split(' ')[0]}</text>`;

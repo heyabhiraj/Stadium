@@ -33,6 +33,10 @@ from stadiummind.api.schemas import (
     TokenResponse,
     ZoneHeat,
 )
+from stadiummind.api.middleware import (
+    RateLimitMiddleware,
+    SecurityHeadersMiddleware,
+)
 from stadiummind.api.security import AuthError, issue_token, verify_token
 from stadiummind.api.service import StadiumService
 from stadiummind.core.config import get_settings
@@ -41,20 +45,39 @@ logger = logging.getLogger(__name__)
 
 
 def create_app(service: StadiumService | None = None) -> FastAPI:
-    """Build and return the FastAPI application."""
-    settings = get_settings()
-    service = service or StadiumService(settings)
+    """Build and return the FastAPI application.
+
+    Settings are taken from the (optionally injected) service, so a test can
+    fully control security configuration by constructing the service with a
+    custom :class:`Settings`.
+    """
+    service = service or StadiumService(get_settings())
+    settings = service.settings
+    # Fail fast on an unsafe production configuration.
+    settings.assert_production_safe()
 
     app = FastAPI(
         title="StadiumMind AI",
         version="0.1.0",
         description="GenAI operating system for FIFA World Cup 2026 stadiums.",
     )
+    # Middleware order: security headers (outermost) -> rate limit -> CORS.
+    if settings.security_headers_enabled:
+        app.add_middleware(
+            SecurityHeadersMiddleware, production=settings.is_production
+        )
+    app.add_middleware(
+        RateLimitMiddleware, limit_per_minute=settings.rate_limit_per_minute
+    )
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],  # demo; restrict in production
-        allow_methods=["*"],
-        allow_headers=["*"],
+        # Restrict to configured origins. Bearer-token auth (no cookies) means
+        # credentials are not needed, which keeps us off the CORS-credential
+        # foot-guns entirely.
+        allow_origins=list(settings.allowed_origins),
+        allow_credentials=False,
+        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type"],
     )
     # Expose the service so tests / other code can reach it via app.state.
     app.state.service = service

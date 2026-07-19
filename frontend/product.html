@@ -96,6 +96,11 @@
   .bubble.ai{background:#f1f5f9}.bubble.me{background:var(--brand);color:#fff}
   .suggest{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
   [dir="rtl"] .action,[dir="rtl"] .hero{text-align:right}
+  /* Accessibility: visible focus + respect reduced-motion preference. */
+  :focus-visible{outline:3px solid var(--brand);outline-offset:2px;border-radius:8px}
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important}
+  }
 </style>
 </head>
 <body>
@@ -184,7 +189,9 @@ const IC={
   emergency:svg('M12 2l9 16H3L12 2z M12 9v4 M12 17v0'),sun:svg('M12 4V2 M12 22v-2 M4 12H2 M22 12h-2 M12 8a4 4 0 100 8 4 4 0 000-8z'),
   ops:svg('M3 3v18h18 M7 15l3-4 3 2 4-6'),
 };
-function svg(p,s=22){return `<svg class="ic" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${p}"/></svg>`;}
+function svg(p,s=22){return `<svg class="ic" aria-hidden="true" focusable="false" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${p}"/></svg>`;}
+/* Respect the user's reduced-motion preference for the congestion pulse. */
+const REDUCED_MOTION = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* =========================================================================
    Venue + simulation (condensed mirror of the backend)
@@ -247,8 +254,9 @@ function viewLanguage(){
   root.innerHTML=`<div class="center"><div class="lang-panel">
     <div class="brand">${logo()} StadiumMind <span style="color:var(--brand)">AI</span></div>
     <h2 style="margin-top:18px">${t.chooseLang}</h2>
-    <div class="lang-grid">${Object.keys(I18N).map(c=>`
-      <div class="lang-tile ${c===LANG?'sel':''}" data-l="${c}">${flag(c)}<span>${I18N[c].name}</span></div>`).join('')}</div>
+    <div class="lang-grid" role="listbox" aria-label="${t.chooseLang}">${Object.keys(I18N).map(c=>`
+      <div class="lang-tile ${c===LANG?'sel':''}" data-l="${c}" role="option" tabindex="0"
+        aria-selected="${c===LANG}" aria-label="${I18N[c].name}">${flag(c)}<span>${I18N[c].name}</span></div>`).join('')}</div>
     <button class="btn primary" id="langGo">${T().continue}</button>
   </div></div>`;
   root.querySelectorAll('.lang-tile').forEach(el=>el.onclick=()=>{setLang(el.dataset.l);
@@ -271,7 +279,8 @@ function viewLauncher(){
       <button class="btn ghost" id="chLang">${t.langLabel}: ${I18N[LANG].name}</button></div>
     <h2>${t.chooseExp}</h2>
     <div class="exp-grid">${def.map(c=>`
-      <div class="exp-card" data-go="${c.k}"><div class="exp-ic">${c.ic}</div>
+      <div class="exp-card" data-go="${c.k}" role="button" tabindex="0" aria-label="${c.title}: ${c.desc}">
+        <div class="exp-ic">${c.ic}</div>
         <div><h3>${c.title}</h3><p>${c.desc}</p></div></div>`).join('')}</div>
   </div>`;
   document.getElementById('chLang').onclick=viewLanguage;
@@ -320,7 +329,7 @@ function renderFanBody(){const t=T();const b=document.getElementById('fanBody');
   if(TAB==='home'){
     b.innerHTML=`<div class="hero"><div class="greet">${IC.sun} ${t.greet}</div>
       <div class="match">Brazil vs Spain</div><div class="kick">FIFA World Cup 2026 · ${t.kick}</div></div>
-      <div class="actions">${[['navigate','navigate'],['food','food'],['transport','transport'],['washroom','washroom'],['access','access'],['emergency','emergency']].map(([ic,key])=>`<div class="action">${IC[ic]}<span>${t[key]}</span></div>`).join('')}</div>
+      <div class="actions">${[['navigate','navigate'],['food','food'],['transport','transport'],['washroom','washroom'],['access','access'],['emergency','emergency']].map(([ic,key])=>`<div class="action" role="button" tabindex="0" aria-label="${t[key]}">${IC[ic]}<span>${t[key]}</span></div>`).join('')}</div>
       <h3 style="margin:16px 0 4px;font-size:12px" class="muted">${t.liveAlerts.toUpperCase()}</h3>${alerts()}`;
   }else if(TAB==='map'){b.innerHTML='<div id="fbmap"></div>';renderMap('fbmap');}
   else if(TAB==='ai'){b.innerHTML=aiPanel();wireAI();}
@@ -419,12 +428,23 @@ function renderMap(elId,W=520,H=420){const el=document.getElementById(elId);if(!
   ZONES.forEach(zn=>{const cx=zn.x*W,cy=zn.y*H,lvl=SIM.level(zn.id),col=LVLCOLOR[lvl];
     const r=zn.type==='seating'?26:zn.type==='concourse'?18:14;
     s+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${col}" fill-opacity="0.85" stroke="#fff" stroke-width="1.2"><title>${zn.name}: ${pct(SIM.ratio(zn.id))}</title></circle>`;
-    if(lvl==='congested')s+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${col}" stroke-width="2"><animate attributeName="r" values="${r};${r+10};${r}" dur="1.4s" repeatCount="indefinite"/><animate attributeName="stroke-opacity" values="0.9;0;0.9" dur="1.4s" repeatCount="indefinite"/></circle>`;
+    if(lvl==='congested'&&!REDUCED_MOTION)s+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${col}" stroke-width="2"><animate attributeName="r" values="${r};${r+10};${r}" dur="1.4s" repeatCount="indefinite"/><animate attributeName="stroke-opacity" values="0.9;0;0.9" dur="1.4s" repeatCount="indefinite"/></circle>`;
     s+=`<text class="zone-label" x="${cx}" y="${cy+3}" text-anchor="middle">${zn.name.split(' ')[0]}</text>`;});
   el.innerHTML=s+'</svg>';
 }
 function legend(){const t=T();return `<span><i class="lvl-normal"></i>normal</span><span><i class="lvl-moderate"></i>moderate</span><span><i class="lvl-busy"></i>busy</span><span><i class="lvl-congested"></i>congested</span>`;}
-function logo(){return `<svg class="logo" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="12" rx="9" ry="6"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>`;}
+function logo(){return `<svg class="logo" aria-hidden="true" focusable="false" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="12" rx="9" ry="6"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>`;}
+
+/* Keyboard support: activate any role="button"/option element with Enter or
+   Space, mirroring native button semantics for our custom tiles. */
+document.addEventListener('keydown',e=>{
+  const el=e.target;
+  if(!el||!el.getAttribute)return;
+  const role=el.getAttribute('role');
+  if((role==='button'||role==='option')&&(e.key==='Enter'||e.key===' ')){
+    e.preventDefault(); el.click();
+  }
+});
 
 viewLanguage();
 </script>

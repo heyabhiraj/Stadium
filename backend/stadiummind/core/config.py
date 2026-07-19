@@ -58,6 +58,19 @@ class Settings:
     jwt_secret: str = "dev-secret-change-me"
     access_token_ttl_minutes: int = 720
 
+    # --- Deployment / security -------------------------------------------
+    # "development" | "staging" | "production". Production enforces stricter
+    # checks (see assert_production_safe).
+    environment: str = "development"
+    # Browser origins permitted by CORS. Never "*" in production.
+    allowed_origins: tuple[str, ...] = ("http://localhost:3000",)
+    # Per-client-IP request budget for the API, per minute. 0 disables limiting.
+    rate_limit_per_minute: int = 240
+    # Emit hardening response headers (nosniff, frame-options, HSTS, CSP...).
+    security_headers_enabled: bool = True
+    # Reject a surge larger than this (abuse / typo guard).
+    max_surge_people: int = 200_000
+
     # Roles recognised by the auth layer.
     roles: tuple[str, ...] = field(
         default=("fan", "volunteer", "operations", "security", "medical")
@@ -80,6 +93,12 @@ class Settings:
             except ValueError:
                 return default
 
+        def _csv(raw: str | None, default: tuple[str, ...]) -> tuple[str, ...]:
+            if not raw:
+                return default
+            parts = tuple(p.strip() for p in raw.split(",") if p.strip())
+            return parts or default
+
         return cls(
             gemini_api_key=os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"),
             gemini_model=os.getenv("GEMINI_MODEL", "gemini-1.5-flash"),
@@ -99,12 +118,44 @@ class Settings:
             queue_alert_minutes=_float("QUEUE_ALERT_MINUTES", 15.0),
             jwt_secret=os.getenv("JWT_SECRET", "dev-secret-change-me"),
             access_token_ttl_minutes=int(os.getenv("ACCESS_TOKEN_TTL_MINUTES", "720")),
+            environment=os.getenv("ENVIRONMENT", "development").strip().lower(),
+            allowed_origins=_csv(
+                os.getenv("CORS_ALLOWED_ORIGINS"), ("http://localhost:3000",)
+            ),
+            rate_limit_per_minute=int(os.getenv("RATE_LIMIT_PER_MINUTE", "240")),
+            security_headers_enabled=_flag("SECURITY_HEADERS_ENABLED", True),
         )
 
     @property
     def gemini_enabled(self) -> bool:
         """True when a real Gemini call should be attempted."""
         return bool(self.gemini_api_key) and not self.force_mock_llm
+
+    @property
+    def is_production(self) -> bool:
+        return self.environment == "production"
+
+    def assert_production_safe(self) -> None:
+        """Fail fast if the configuration is unsafe for production.
+
+        Called at application start-up. Prevents shipping with the default
+        signing secret, a wildcard CORS policy, or disabled rate limiting.
+        """
+        if not self.is_production:
+            return
+        problems: list[str] = []
+        if self.jwt_secret == "dev-secret-change-me":
+            problems.append("JWT_SECRET is still the default value")
+        if "*" in self.allowed_origins:
+            problems.append("CORS_ALLOWED_ORIGINS must not be '*' in production")
+        if self.rate_limit_per_minute <= 0:
+            problems.append("RATE_LIMIT_PER_MINUTE must be > 0 in production")
+        if problems:
+            from stadiummind.core.exceptions import ConfigurationError
+
+            raise ConfigurationError(
+                "Unsafe production configuration: " + "; ".join(problems)
+            )
 
 
 @lru_cache(maxsize=1)

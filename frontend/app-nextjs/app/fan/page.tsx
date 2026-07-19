@@ -2,9 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { Navigation, Utensils, TrainFront, Accessibility, AlertTriangle, MapPin, User, Ticket } from "lucide-react";
-import { GoogleStadiumMap } from "@/features/map/GoogleStadiumMap";
+const GoogleStadiumMap = dynamic(() => import("@/features/map/GoogleStadiumMap").then(mod => mod.GoogleStadiumMap), {
+  ssr: false,
+  loading: () => <div className="w-full h-[460px] bg-slate-100 animate-pulse rounded-xl" />
+});
 import { RecommendationCard } from "@/features/ai/RecommendationCard";
+import { NavigationAlert } from "@/features/navigation/NavigationAlert";
 import { api, type Match, type Recommendation, type VenueAnchor, type ZoneHeat } from "@/lib/api";
 import { I18N, LOCALES, flagColors, type Locale } from "@/lib/i18n";
 
@@ -248,6 +253,7 @@ export default function FanHome() {
           </div>
         </div>
       </div>
+      <NavigationAlert />
     </div>
   );
 }
